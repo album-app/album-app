@@ -10,6 +10,7 @@ import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
 import mdc.ida.hips.model.HIPSLaunchRequestEvent;
 import mdc.ida.hips.model.HIPSolution;
 import mdc.ida.hips.model.SolutionArgument;
+import org.scijava.app.StatusService;
 import org.scijava.command.DynamicCommandInfo;
 import org.scijava.command.Inputs;
 import org.scijava.event.EventHandler;
@@ -25,9 +26,10 @@ import org.scijava.ui.UIService;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Consumer;
 
 @Plugin(type = Service.class)
-public class DefaultHIPSService extends AbstractService implements HIPSService {
+public class DefaultHIPSServerService extends AbstractService implements HIPSServerService {
 
 	@Parameter
 	LogService log;
@@ -38,6 +40,9 @@ public class DefaultHIPSService extends AbstractService implements HIPSService {
 	@Parameter
 	EventService eventService;
 
+	@Parameter
+	StatusService statusService;
+
 	private HIPSClient client;
 
 	@Override
@@ -47,14 +52,15 @@ public class DefaultHIPSService extends AbstractService implements HIPSService {
 	}
 
 	@Override
-	public void updateAndDisplayIndex() {
+	public void updateIndex(Consumer<HIPSCollectionUpdatedEvent> callback) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "get_index";
-		try {
-			client.send(actionName, createHIPSRequest(mapper, actionName) + "\n");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		JsonNode response = client.send(createHIPSRequest(mapper, actionName) + "\n");
+		if(response == null) return;
+		statusService.showStatus("Updated HIPS collection.");
+		HIPSCollectionUpdatedEvent event = new HIPSCollectionUpdatedEvent(HIPSCollection.fromJSON(response));
+		callback.accept(event);
+		eventService.publish(event);
 	}
 
 	@Override
@@ -62,29 +68,35 @@ public class DefaultHIPSService extends AbstractService implements HIPSService {
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "launch_hips";
 		ObjectNode actionArgs = mapper.createObjectNode();
-		actionArgs.put("group", solution.group);
-		actionArgs.put("name", solution.name);
-		actionArgs.put("version", solution.version);
+		actionArgs.put("group", solution.getGroup());
+		actionArgs.put("name", solution.getName());
+		actionArgs.put("version", solution.getVersion());
 		ObjectNode solutionArgs = mapper.createObjectNode();
 		actionArgs.set("args", solutionArgs);
 
-		if(solution.args.size() > 0) {
-			System.out.println("Harvesting inputs for " + solution.group + ":" + solution.name + ":" + solution.version + "...");
+		if(solution.getArgs().size() > 0) {
+			System.out.println("Harvesting inputs for " + solution.getGroup() + ":" + solution.getName() + ":" + solution.getVersion() + "...");
 			Inputs inputs = new Inputs(getContext());
-			for (SolutionArgument arg : solution.args) {
+			for (SolutionArgument arg : solution.getArgs()) {
 				inputs.addInput(createModuleItem(inputs.getInfo(), arg));
 			}
 			inputs.harvest();
-			for (SolutionArgument arg : solution.args) {
+			for (SolutionArgument arg : solution.getArgs()) {
 				solutionArgs.put(arg.name, inputs.getInput(arg.name).toString());
 			}
 		}
-		System.out.println("launching " + solution.group + ":" + solution.name + ":" + solution.version + "...");
+		System.out.println("launching " + solution.getGroup() + ":" + solution.getName() + ":" + solution.getVersion() + "...");
 		try {
-			client.send(actionName, createHIPSRequest(mapper, actionName, actionArgs) + "\n");
+			JsonNode response = client.send(createHIPSRequest(mapper, actionName, actionArgs) + "\n");
+			//TODO handle response if there is one
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	@EventHandler
+	private void launchSolution(HIPSLaunchRequestEvent event) {
+		new Thread(() -> launchSolution(event.getSolution())).start();
 	}
 
 	private String createHIPSRequest(ObjectMapper mapper, String actionName) {
@@ -96,11 +108,6 @@ public class DefaultHIPSService extends AbstractService implements HIPSService {
 		request.put("action", actionName);
 		request.set("args", actionArgs);
 		return request.toString();
-	}
-
-	@EventHandler
-	public void launchSolution(HIPSLaunchRequestEvent event) {
-		new Thread(() -> launchSolution(event.getSolution())).start();
 	}
 
 	private ModuleItem<?> createModuleItem(DynamicCommandInfo info, SolutionArgument arg) {
@@ -115,27 +122,6 @@ public class DefaultHIPSService extends AbstractService implements HIPSService {
 			return item;
 		}
 		return null;
-	}
-
-	@EventHandler
-	public void updateIndex(HIPSCollectionUpdatedEvent event) {
-		HIPSCollection collection = HIPSCollection.fromJSON(event.getCollection());
-		ui.show(collection);
-	}
-
-	@Override
-	public void handleServerResponse(String msg, String response) {
-		if(response == null) return;
-		ObjectMapper mapper = new ObjectMapper();
-		JsonNode jsonNode = null;
-		try {
-			jsonNode = mapper.readTree(response);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		if(msg.equals("get_index")) {
-			eventService.publish(new HIPSCollectionUpdatedEvent(jsonNode));
-		}
 	}
 
 }

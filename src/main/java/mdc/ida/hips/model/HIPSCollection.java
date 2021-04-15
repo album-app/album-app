@@ -22,9 +22,9 @@ public class HIPSCollection extends ArrayList<HIPSolution> {
 				while (versions.hasNext()) {
 					Map.Entry<String, JsonNode> version = versions.next();
 					HIPSolution solution = new HIPSolution();
-					solution.group = groupName;
-					solution.name = nameName;
-					solution.version = version.getKey();
+					solution.setGroup(groupName);
+					solution.setName(nameName);
+					solution.setVersion(version.getKey());
 					JsonNode args = version.getValue().get("args");
 					List<SolutionArgument> hipsArgs = new ArrayList<>();
 					if(args != null) {
@@ -36,7 +36,7 @@ public class HIPSCollection extends ArrayList<HIPSolution> {
 							hipsArgs.add(hipsArg);
 						}
 					}
-					solution.args = hipsArgs;
+					solution.setArgs(hipsArgs);
 					collection.add(solution);
 				}
 			}

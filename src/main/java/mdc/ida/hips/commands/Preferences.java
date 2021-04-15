@@ -7,7 +7,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.prefs.PrefService;
 
-@Plugin(type = Command.class, label = "About ImageJ...", menu = {
+@Plugin(type = Command.class, label = "HIPS Preferences", menu = {
 		@Menu(label = MenuConstants.FILE_LABEL, weight = MenuConstants.FILE_WEIGHT,
 				mnemonic = MenuConstants.FILE_MNEMONIC),
 		@Menu(label = "Preferences") }, headless = true)

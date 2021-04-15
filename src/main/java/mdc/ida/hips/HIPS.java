@@ -1,7 +1,8 @@
 package mdc.ida.hips;
 
 import mdc.ida.hips.app.HIPSApp;
-import mdc.ida.hips.service.HIPSService;
+import mdc.ida.hips.service.HIPSServerService;
+import org.scijava.ui.javafx.JavaFXUI;
 import org.scijava.AbstractGateway;
 import org.scijava.Context;
 import org.scijava.Gateway;
@@ -12,18 +13,20 @@ import org.scijava.service.SciJavaService;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.scijava.ui.UIService.UI_PROPERTY;
+
 @Plugin(type = Gateway.class)
 public class HIPS extends AbstractGateway {
 
 	@Parameter
-	HIPSService hipsService;
+	private HIPSServerService hipsService;
 
 	@Override
 	public void launch(String... args) {
 		HIPSOptions.Values options = parseOptions(Arrays.asList(args));
+		System.setProperty(UI_PROPERTY, JavaFXUI.NAME);
 		super.launch(args);
 		hipsService.init(options);
-		hipsService.updateAndDisplayIndex();
 	}
 
 	private HIPSOptions.Values parseOptions(List<String> list) {
@@ -58,5 +61,14 @@ public class HIPS extends AbstractGateway {
 	@Override
 	public String getShortName() {
 		return "hips";
+	}
+
+	public HIPSServerService server() {
+		return hipsService;
+	}
+
+	public static void main(final String... args) {
+		final HIPS hips = new HIPS();
+		hips.launch(args);
 	}
 }

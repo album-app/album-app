@@ -1,6 +1,12 @@
 package mdc.ida.hips;
 
-import mdc.ida.hips.service.HIPSService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import mdc.ida.hips.model.HIPSCollection;
+import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
+import mdc.ida.hips.service.HIPSServerService;
+import org.scijava.app.StatusService;
+import org.scijava.event.EventService;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.UIService;
 
@@ -9,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.function.Consumer;
 
 public class HIPSClient {
 
@@ -16,7 +23,7 @@ public class HIPSClient {
     private UIService ui;
 
     @Parameter
-    private HIPSService hipsService;
+    private HIPSServerService hipsService;
 
     private Socket socket;
     private int port;
@@ -31,7 +38,7 @@ public class HIPSClient {
         socket = new Socket(host, port);
     }
 
-    public void send(String request_id, String msg) throws IOException {
+    public JsonNode send(String msg) throws IOException {
         if(socket == null || socket.isClosed()) {
             startSocket();
         }
@@ -42,8 +49,16 @@ public class HIPSClient {
         out.flush();
         String serverMsg = in.readLine();
         System.out.println("Server response: " + serverMsg);
-        hipsService.handleServerResponse(request_id, serverMsg);
         in.close();
         out.close();
+        if(serverMsg == null) return null;
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = null;
+        try {
+            jsonNode = mapper.readTree(serverMsg);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return jsonNode;
     }
 }

@@ -1,4 +1,4 @@
-package mdc.ida.hips.ui;
+package mdc.ida.hips.ui.javafx.viewer;
 
 import mdc.ida.hips.model.HIPSCollection;
 import org.scijava.display.AbstractDisplay;
