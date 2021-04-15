@@ -40,6 +40,9 @@ public class JavaFXNumberWidget extends JavaFXInputWidget<Number> implements Num
 
 		TextField numberField = new TextField();
 		numberField.setTextFormatter(new TextFormatter<>(new NumberStringConverter()));
+		numberField.textProperty().addListener((observable, oldValue, newValue) -> {
+			updateModel();
+		});
 
 		refreshWidget();
 	}

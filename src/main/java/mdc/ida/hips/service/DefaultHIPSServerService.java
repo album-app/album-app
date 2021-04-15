@@ -23,6 +23,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 import org.scijava.ui.UIService;
+import org.scijava.widget.FileWidget;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,7 +83,8 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 			}
 			inputs.harvest();
 			for (SolutionArgument arg : solution.getArgs()) {
-				solutionArgs.put(arg.name, inputs.getInput(arg.name).toString());
+				Object input = inputs.getInput(arg.name);
+				solutionArgs.put(arg.name, input.toString());
 			}
 		}
 		System.out.println("launching " + solution.getGroup() + ":" + solution.getName() + ":" + solution.getVersion() + "...");
@@ -114,6 +116,12 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		if(arg.type.equals("file")) {
 			ModuleItem<File> item = new DefaultMutableModuleItem<File>(info, arg.name, File.class);
 			item.setDescription(arg.description);
+			return item;
+		}
+		if(arg.type.equals("directory")) {
+			ModuleItem<File> item = new DefaultMutableModuleItem<File>(info, arg.name, File.class);
+			item.setDescription(arg.description);
+			item.set("style", FileWidget.DIRECTORY_STYLE);
 			return item;
 		}
 		if(arg.type.equals("string")) {

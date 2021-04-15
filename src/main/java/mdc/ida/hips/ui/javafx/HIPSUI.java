@@ -1,6 +1,9 @@
 package mdc.ida.hips.ui.javafx;
 
 import javafx.application.Platform;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
 import org.scijava.Priority;
 import org.scijava.display.Display;
 import org.scijava.plugin.Plugin;
@@ -14,7 +17,9 @@ import org.scijava.ui.javafx.JavaFXStatusBar;
 import org.scijava.ui.javafx.JavaFXUI;
 import org.scijava.ui.javafx.console.JavaFXConsolePane;
 import org.scijava.ui.viewer.DisplayWindow;
+import org.scijava.widget.FileWidget;
 
+import java.io.File;
 import java.util.Optional;
 
 /**
@@ -90,4 +95,29 @@ public class HIPSUI extends AbstractUserInterface implements JavaFXUI {
 		return true;
 	}
 
+	@Override
+	public File chooseFile(File file, String style) {
+		return chooseFile("Choose file", file, style);
+	}
+
+	@Override
+	public File chooseFile(String title, File file, String style) {
+		Window window = getApplicationFrame().getTabPane().getScene().getWindow();
+		if(style.equals(FileWidget.DIRECTORY_STYLE)) {
+			DirectoryChooser chooser = new DirectoryChooser();
+			if(file != null) chooser.setInitialDirectory(file);
+			return chooser.showDialog(window);
+		} else {
+			FileChooser chooser = new FileChooser();
+			chooser.setTitle(title);
+			if(file != null && file.exists()) {
+				chooser.setInitialDirectory(file.getParentFile());
+				chooser.setInitialFileName(file.getName());
+			}
+			if(style.equals(FileWidget.SAVE_STYLE)) {
+				return chooser.showSaveDialog(window);
+			}
+			return chooser.showOpenDialog(window);
+		}
+	}
 }

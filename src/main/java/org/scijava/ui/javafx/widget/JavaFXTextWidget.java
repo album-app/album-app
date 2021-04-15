@@ -45,7 +45,7 @@ import org.scijava.widget.WidgetModel;
  * @author Curtis Rueden
  */
 @Plugin(type = InputWidget.class)
-public class SwingTextWidget extends JavaFXInputWidget<String> implements TextWidget<HBox>
+public class JavaFXTextWidget extends JavaFXInputWidget<String> implements TextWidget<HBox>
 {
 
 	private LogService log;
@@ -80,7 +80,11 @@ public class SwingTextWidget extends JavaFXInputWidget<String> implements TextWi
 		else {
 			textComponent = new TextField();
 		}
+		textComponent.textProperty().addListener((observable, oldValue, newValue) -> {
+			updateModel();
+		});
 		getComponent().getChildren().add(addScrollPane ? new ScrollPane(textComponent) : textComponent);
+
 
 		refreshWidget();
 	}
