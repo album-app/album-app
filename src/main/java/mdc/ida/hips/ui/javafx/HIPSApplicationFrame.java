@@ -20,26 +20,23 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
 import mdc.ida.hips.service.HIPSServerService;
 import org.scijava.Context;
-import org.scijava.event.EventHandler;
-import org.scijava.event.EventService;
-import org.scijava.event.EventSubscriber;
+import org.scijava.Disposable;
+import org.scijava.app.AppService;
 import org.scijava.menu.MenuService;
 import org.scijava.menu.ShadowMenu;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.ApplicationFrame;
 import org.scijava.ui.UIService;
+import org.scijava.ui.javafx.JavaFXService;
 import org.scijava.ui.javafx.JavaFXStatusBar;
 import org.scijava.ui.javafx.menu.JavaFXMenuButtonCreator;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * JavaFX implementation of {@link ApplicationFrame}.
@@ -54,7 +51,13 @@ public class HIPSApplicationFrame implements ApplicationFrame {
 	HIPSServerService serverService;
 
 	@Parameter
+	AppService appService;
+
+	@Parameter
 	UIService uiService;
+
+	@Parameter
+	JavaFXService javaFXService;
 
 	private final TabPane tabPane;
 	private final Stage window;
@@ -79,6 +82,10 @@ public class HIPSApplicationFrame implements ApplicationFrame {
 		window.setWidth(800);
 		window.setHeight(500);
 		window.show();
+		window.setOnCloseRequest(event -> {
+			javaFXService.setClosing(true);
+			appService.getApp().quit();
+		});
 	}
 
 	private Node createPlaceHolder() {

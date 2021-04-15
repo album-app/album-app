@@ -39,6 +39,7 @@ public class HIPSUI extends AbstractUserInterface implements JavaFXUI {
 			consolePane.get().setTabPane(appFrame.get().getTabPane());
 			super.createUI();
 		});
+		Platform.setImplicitExit(true);
 	}
 
 	@Override

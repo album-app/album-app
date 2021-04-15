@@ -31,7 +31,6 @@ package org.scijava.ui.javafx;
 
 import javafx.application.Platform;
 import org.scijava.Priority;
-import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
@@ -62,13 +61,13 @@ public final class JavaFXThreadService extends AbstractService implements
 		ThreadService
 {
 
+	@Parameter
+	private JavaFXService javaFXService;
+
 	private static final String SCIJAVA_THREAD_PREFIX = "SciJava-";
 
 	private static WeakHashMap<Thread, Thread> parents =
 		new WeakHashMap<>();
-
-	@Parameter
-	private LogService log;
 
 	private ExecutorService executor;
 
@@ -263,8 +262,9 @@ public final class JavaFXThreadService extends AbstractService implements
 	 * @throws ExecutionException
 	 *             If a exception is occurred in the run method of the Runnable
 	 */
-	public static void runAndWait(final Runnable run)
+	public void runAndWait(final Runnable run)
 			throws InterruptedException, ExecutionException {
+		if(javaFXService.isClosing()) return;
 		if (Platform.isFxApplicationThread()) {
 			try {
 				run.run();
@@ -272,6 +272,7 @@ public final class JavaFXThreadService extends AbstractService implements
 				throw new ExecutionException(e);
 			}
 		} else {
+
 			final Lock lock = new ReentrantLock();
 			final Condition condition = lock.newCondition();
 			final ThrowableWrapper throwableWrapper = new ThrowableWrapper();
