@@ -4,11 +4,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.HBox;
 import javafx.util.converter.NumberStringConverter;
-import org.scijava.log.LogService;
-import org.scijava.module.ModuleService;
-import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.thread.ThreadService;
 import org.scijava.widget.InputWidget;
 import org.scijava.widget.NumberWidget;
 import org.scijava.widget.WidgetModel;
@@ -16,15 +12,6 @@ import org.scijava.widget.WidgetModel;
 @Plugin(type = InputWidget.class)
 public class JavaFXNumberWidget extends JavaFXInputWidget<Number> implements NumberWidget<HBox>
 {
-
-	@Parameter
-	private ThreadService threadService;
-
-	@Parameter
-	private ModuleService moduleService;
-
-	@Parameter
-	private LogService log;
 
 	private TextField numberField;
 

@@ -2,7 +2,6 @@ package mdc.ida.hips;
 
 import mdc.ida.hips.app.HIPSApp;
 import mdc.ida.hips.service.HIPSServerService;
-import org.scijava.ui.javafx.JavaFXUI;
 import org.scijava.AbstractGateway;
 import org.scijava.Context;
 import org.scijava.Gateway;
@@ -13,8 +12,6 @@ import org.scijava.service.SciJavaService;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.scijava.ui.UIService.UI_PROPERTY;
-
 @Plugin(type = Gateway.class)
 public class HIPS extends AbstractGateway {
 
@@ -24,7 +21,6 @@ public class HIPS extends AbstractGateway {
 	@Override
 	public void launch(String... args) {
 		HIPSOptions.Values options = parseOptions(Arrays.asList(args));
-		System.setProperty(UI_PROPERTY, JavaFXUI.NAME);
 		super.launch(args);
 		hipsService.init(options);
 	}

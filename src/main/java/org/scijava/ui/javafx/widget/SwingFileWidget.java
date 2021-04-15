@@ -5,9 +5,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
-import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.UIService;
 import org.scijava.widget.FileWidget;
 import org.scijava.widget.InputWidget;
 import org.scijava.widget.WidgetModel;
@@ -17,9 +15,6 @@ import java.io.File;
 @Plugin(type = InputWidget.class)
 public class SwingFileWidget extends JavaFXInputWidget<File> implements FileWidget<HBox>
 {
-
-	@Parameter
-	private UIService uiService;
 
 	private TextField path;
 	private Button browse;

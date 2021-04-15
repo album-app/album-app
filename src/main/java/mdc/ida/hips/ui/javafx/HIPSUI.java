@@ -1,77 +1,49 @@
 package mdc.ida.hips.ui.javafx;
 
 import javafx.application.Platform;
-import org.scijava.Context;
 import org.scijava.Priority;
-import org.scijava.app.AppService;
 import org.scijava.display.Display;
-import org.scijava.event.EventService;
-import org.scijava.log.LogService;
-import org.scijava.menu.MenuService;
-import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.thread.ThreadService;
 import org.scijava.ui.AbstractUserInterface;
 import org.scijava.ui.DialogPrompt;
 import org.scijava.ui.SystemClipboard;
 import org.scijava.ui.ToolBar;
-import org.scijava.ui.UIService;
 import org.scijava.ui.UserInterface;
 import org.scijava.ui.javafx.JavaFXClipboard;
-import org.scijava.ui.javafx.console.JavaFXConsolePane;
 import org.scijava.ui.javafx.JavaFXStatusBar;
 import org.scijava.ui.javafx.JavaFXUI;
+import org.scijava.ui.javafx.console.JavaFXConsolePane;
 import org.scijava.ui.viewer.DisplayWindow;
+
+import java.util.Optional;
 
 /**
  * Implementation for JavaFX-based user interfaces.
  *
  */
 @Plugin(type = UserInterface.class, name = JavaFXUI.NAME, priority = Priority.HIGH)
-public class HIPSUI extends AbstractUserInterface implements
-	JavaFXUI {
+public class HIPSUI extends AbstractUserInterface implements JavaFXUI {
 
-	@Parameter
-	private AppService appService;
-
-	@Parameter
-	private EventService eventService;
-
-	@Parameter
-	private MenuService menuService;
-
-	@Parameter
-	private UIService uiService;
-
-	@Parameter
-	private ThreadService threadService;
-
-	@Parameter
-	private LogService log;
-
-	@Parameter
-	private Context context;
-
-	private HIPSApplicationFrame appFrame;
-	private JavaFXStatusBar statusBar;
-	private JavaFXConsolePane consolePane;
-	private JavaFXClipboard systemClipboard;
+	private Optional<HIPSApplicationFrame> appFrame = Optional.empty();
+	private Optional<JavaFXStatusBar> statusBar = Optional.empty();
+	private Optional<JavaFXConsolePane> consolePane = Optional.empty();
+	private Optional<JavaFXClipboard> systemClipboard = Optional.empty();
 
 	@Override
 	protected void createUI() {
 		Platform.startup(() -> {
-			statusBar = new JavaFXStatusBar(context);
-			consolePane = new JavaFXConsolePane(context);
-			systemClipboard = new JavaFXClipboard();
-			appFrame = new HIPSApplicationFrame(context, appService.getApp().getTitle(), statusBar);
-			consolePane.setTabPane(appFrame.getTabPane());
+			statusBar = Optional.of(new JavaFXStatusBar(context()));
+			consolePane = Optional.of(new JavaFXConsolePane(context()));
+			systemClipboard = Optional.of(new JavaFXClipboard());
+			appFrame = Optional.of(new HIPSApplicationFrame(context(), "HIPS", statusBar.get()));
+			consolePane.get().setTabPane(appFrame.get().getTabPane());
 			super.createUI();
 		});
 	}
 
 	@Override
 	public HIPSApplicationFrame getApplicationFrame() {
-		return appFrame;
+		return appFrame.get();
 	}
 
 	@Override
@@ -81,17 +53,17 @@ public class HIPSUI extends AbstractUserInterface implements
 
 	@Override
 	public JavaFXStatusBar getStatusBar() {
-		return statusBar;
+		return statusBar.get();
 	}
 
 	@Override
 	public JavaFXConsolePane getConsolePane() {
-		return consolePane;
+		return consolePane.get();
 	}
 
 	@Override
 	public SystemClipboard getSystemClipboard() {
-		return systemClipboard;
+		return systemClipboard.get();
 	}
 
 	@Override
