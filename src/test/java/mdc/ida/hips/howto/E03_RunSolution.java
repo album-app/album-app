@@ -3,10 +3,9 @@ package mdc.ida.hips.howto;
 import mdc.ida.hips.AbstractHowto;
 import mdc.ida.hips.DummyServer;
 import mdc.ida.hips.HIPS;
-import mdc.ida.hips.model.HIPSCollection;
+import mdc.ida.hips.model.HIPSCatalog;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
 import mdc.ida.hips.model.HIPSolution;
-import org.junit.After;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -30,8 +29,8 @@ public class E03_RunSolution extends AbstractHowto {
 
 	public void collectionUpdated(HIPSCollectionUpdatedEvent event) {
 		// once the collection is updated, find and run one solution
-		HIPSCollection collection = event.getCollection();
-		Optional<HIPSolution> imageJDisplay = collection.stream().filter(solution -> solution.getName().equals("imagej-display")).findFirst();
+		HIPSCatalog catalog = event.getCollection().get(0);
+		Optional<HIPSolution> imageJDisplay = catalog.stream().filter(solution -> solution.getName().equals("imagej-display")).findFirst();
 		imageJDisplay.ifPresent(solution -> hips.server().launchSolution(solution));
 	}
 

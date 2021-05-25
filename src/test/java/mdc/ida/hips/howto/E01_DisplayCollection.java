@@ -3,6 +3,8 @@ package mdc.ida.hips.howto;
 import mdc.ida.hips.AbstractHowto;
 import mdc.ida.hips.DummyServer;
 import mdc.ida.hips.HIPS;
+import mdc.ida.hips.model.HIPSCatalog;
+import mdc.ida.hips.model.HIPSCollection;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
 import org.junit.After;
 import org.junit.Test;
@@ -26,8 +28,11 @@ public class E01_DisplayCollection extends AbstractHowto {
 	}
 
 	public void collectionUpdated(HIPSCollectionUpdatedEvent event) {
-		// once the collection is updated, display it
-		hips.ui().show("HIPS Collection", event.getCollection());
+		// once the collection is updated, display all catalogs
+		HIPSCollection collection = event.getCollection();
+		for (HIPSCatalog catalog : collection) {
+			hips.ui().show(catalog.getName(), catalog);
+		}
 	}
 
 	public static void main(String... args) throws IOException {

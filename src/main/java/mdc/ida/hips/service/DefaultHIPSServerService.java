@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import mdc.ida.hips.HIPSClient;
 import mdc.ida.hips.HIPSOptions;
+import mdc.ida.hips.io.CollectionReader;
 import mdc.ida.hips.model.HIPSCollection;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
 import mdc.ida.hips.model.HIPSLaunchRequestEvent;
@@ -59,15 +60,24 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		JsonNode response = client.send(createHIPSRequest(mapper, actionName) + "\n");
 		if(response == null) return;
 		statusService.showStatus("Updated HIPS collection.");
-		HIPSCollectionUpdatedEvent event = new HIPSCollectionUpdatedEvent(HIPSCollection.fromJSON(response));
+		HIPSCollectionUpdatedEvent event = new HIPSCollectionUpdatedEvent(CollectionReader.readCollection(response));
 		callback.accept(event);
 		eventService.publish(event);
 	}
 
 	@Override
+	public void launchSolutionAsTutorial(HIPSolution solution) {
+		launch(solution, true);
+	}
+	
+	@Override
 	public void launchSolution(HIPSolution solution) {
+		launch(solution, false);
+	}
+
+	private void launch(HIPSolution solution, boolean asTutorial) {
 		ObjectMapper mapper = new ObjectMapper();
-		String actionName = "launch_hips";
+		String actionName = asTutorial? "tutorial" : "run";
 		ObjectNode actionArgs = mapper.createObjectNode();
 		actionArgs.put("group", solution.getGroup());
 		actionArgs.put("name", solution.getName());
@@ -83,8 +93,8 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 			}
 			inputs.harvest();
 			for (SolutionArgument arg : solution.getArgs()) {
-				Object input = inputs.getInput(arg.name);
-				solutionArgs.put(arg.name, input.toString());
+				Object input = inputs.getInput(arg.getName());
+				solutionArgs.put(arg.getName(), input.toString());
 			}
 		}
 		System.out.println("launching " + solution.getGroup() + ":" + solution.getName() + ":" + solution.getVersion() + "...");
@@ -98,7 +108,13 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 
 	@EventHandler
 	private void launchSolution(HIPSLaunchRequestEvent event) {
-		new Thread(() -> launchSolution(event.getSolution())).start();
+		new Thread(() -> {
+			if(event.launchAsTutorial()) {
+				launchSolutionAsTutorial(event.getSolution());
+			} else {
+				launchSolution(event.getSolution());
+			}
+		}).start();
 	}
 
 	private String createHIPSRequest(ObjectMapper mapper, String actionName) {
@@ -113,20 +129,20 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	}
 
 	private ModuleItem<?> createModuleItem(DynamicCommandInfo info, SolutionArgument arg) {
-		if(arg.type.equals("file")) {
-			ModuleItem<File> item = new DefaultMutableModuleItem<File>(info, arg.name, File.class);
-			item.setDescription(arg.description);
+		if(arg.getType().equals("file")) {
+			ModuleItem<File> item = new DefaultMutableModuleItem<File>(info, arg.getName(), File.class);
+			item.setDescription(arg.getDescription());
 			return item;
 		}
-		if(arg.type.equals("directory")) {
-			ModuleItem<File> item = new DefaultMutableModuleItem<File>(info, arg.name, File.class);
-			item.setDescription(arg.description);
+		if(arg.getType().equals("directory")) {
+			ModuleItem<File> item = new DefaultMutableModuleItem<File>(info, arg.getName(), File.class);
+			item.setDescription(arg.getDescription());
 			item.set("style", FileWidget.DIRECTORY_STYLE);
 			return item;
 		}
-		if(arg.type.equals("string")) {
-			ModuleItem<String> item = new DefaultMutableModuleItem<String>(info, arg.name, String.class);
-			item.setDescription(arg.description);
+		if(arg.getType().equals("string")) {
+			ModuleItem<String> item = new DefaultMutableModuleItem<String>(info, arg.getName(), String.class);
+			item.setDescription(arg.getDescription());
 			return item;
 		}
 		return null;

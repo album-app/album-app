@@ -28,9 +28,9 @@ public class E02_DisplaySolution extends AbstractHowto {
 	}
 
 	public void collectionUpdated(HIPSCollectionUpdatedEvent event) {
-		// once the collection is updated, display only the first solution
+		// once the collection is updated, display only the first solution of the first catalog
 		HIPSCollection collection = event.getCollection();
-		HIPSolution firstSolution = collection.get(0);
+		HIPSolution firstSolution = collection.get(0).get(0);
 		hips.ui().show(firstSolution.getName(), firstSolution);
 	}
 

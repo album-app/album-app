@@ -75,6 +75,7 @@
 			Image Data Analysis Group, MDC Berlin
 		</license.copyrightOwners>
 		<scijava.jvm.version>11</scijava.jvm.version>
+		<maven.compiler.target>11</maven.compiler.target>
 	</properties>
 
 	<repositories>

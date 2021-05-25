@@ -19,7 +19,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
-import mdc.ida.hips.model.HIPSCollection;
+import mdc.ida.hips.model.HIPSCatalog;
 import mdc.ida.hips.model.HIPSLaunchRequestEvent;
 import mdc.ida.hips.model.HIPSolution;
 import org.scijava.Context;
@@ -35,10 +35,10 @@ import org.scijava.ui.viewer.DisplayViewer;
 import java.util.function.Consumer;
 
 /**
- * This class displays a {@link HIPSCollection}.
+ * This class displays a {@link HIPSCatalog}.
  */
 @Plugin(type = DisplayViewer.class)
-public class HIPSCollectionDisplayViewer extends EasyJavaFXDisplayViewer<HIPSCollection> {
+public class HIPSCatalogDisplayViewer extends EasyJavaFXDisplayViewer<HIPSCatalog> {
 
 	@Parameter
 	private Context context;
@@ -51,35 +51,39 @@ public class HIPSCollectionDisplayViewer extends EasyJavaFXDisplayViewer<HIPSCol
 	@Parameter
 	private EventService eventService;
 
-	private HIPSCollection collection;
+	private HIPSCatalog collection;
 
-	public HIPSCollectionDisplayViewer() {
-		super(HIPSCollection.class);
+	public HIPSCatalogDisplayViewer() {
+		super(HIPSCatalog.class);
 	}
 
 	@Override
-	protected boolean canView(HIPSCollection collection) {
+	protected boolean canView(HIPSCatalog collection) {
 		return true;
 	}
 
 	@Override
-	protected VBox createDisplayPanel(HIPSCollection collection) {
+	protected VBox createDisplayPanel(HIPSCatalog collection) {
 		this.collection = collection;
 		TableView<HIPSolution> tableView = new TableView<>();
-		TableColumn<HIPSolution, String> column1 = new TableColumn<>("Name");
-		column1.setCellValueFactory(new PropertyValueFactory<>("name"));
-		TableColumn<HIPSolution, String> column2 = new TableColumn<>("Group");
-		column2.setCellValueFactory(new PropertyValueFactory<>("group"));
-		tableView.getColumns().add(column1);
-		tableView.getColumns().add(column2);
-		collection.forEach(hipSolution -> tableView.getItems().add(hipSolution));
+		tableView.getColumns().add(makeColumn("Title", "title"));
+		tableView.getColumns().add(makeColumn("Version", "version"));
+		tableView.getColumns().add(makeColumn("Description", "description"));
 		addButton(tableView, 0, "About", hips -> uiService.show(hips.getName(), hips));
-		addButton(tableView, 0, "Run", hips -> eventService.publish(new HIPSLaunchRequestEvent(hips)));
+		addButton(tableView, 0, "Tutorial", hips -> eventService.publish(new HIPSLaunchRequestEvent(hips, true)));
+		addButton(tableView, 0, "Run", hips -> eventService.publish(new HIPSLaunchRequestEvent(hips, false)));
+		collection.forEach(hipSolution -> tableView.getItems().add(hipSolution));
 		tableView.setBorder(Border.EMPTY);
 		tableView.setBackground(Background.EMPTY);
 		VBox vBox = new VBox(createFilter(), tableView);
 		vBox.setPadding(new Insets(5));
 		return vBox;
+	}
+
+	private TableColumn<HIPSolution, String> makeColumn(String text, String property) {
+		TableColumn<HIPSolution, String> column = new TableColumn<>(text);
+		column.setCellValueFactory(new PropertyValueFactory<>(property));
+		return column;
 	}
 
 	private Node createFilter() {

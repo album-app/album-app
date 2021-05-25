@@ -6,7 +6,6 @@ import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.VBox;
-import org.scijava.display.Display;
 import org.scijava.ui.viewer.DisplayPanel;
 import org.scijava.ui.viewer.DisplayWindow;
 

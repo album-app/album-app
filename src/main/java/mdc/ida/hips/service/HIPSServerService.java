@@ -11,5 +11,6 @@ import java.util.function.Consumer;
 public interface HIPSServerService extends SciJavaService {
 	void init(HIPSOptions.Values options);
 	void launchSolution(HIPSolution solution);
+	void launchSolutionAsTutorial(HIPSolution solution);
 	void updateIndex(Consumer<HIPSCollectionUpdatedEvent> callback) throws IOException;
 }

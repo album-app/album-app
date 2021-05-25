@@ -28,6 +28,8 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+import mdc.ida.hips.model.HIPSCatalog;
+import mdc.ida.hips.model.HIPSCollection;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
 import mdc.ida.hips.service.HIPSServerService;
 import org.scijava.Context;
@@ -227,7 +229,10 @@ public class HIPSApplicationFrame implements ApplicationFrame {
 	}
 
 	public void collectionUpdated(HIPSCollectionUpdatedEvent event) {
-		uiService.show("HIPS Collection", event.getCollection());
+		HIPSCollection collection = event.getCollection();
+		for (HIPSCatalog catalog : collection) {
+			uiService.show(catalog.getName(), catalog);
+		}
 	}
 
 	private Node createHeader() {
