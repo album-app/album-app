@@ -2,11 +2,7 @@ package mdc.ida.hips;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import mdc.ida.hips.model.HIPSCollection;
-import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
 import mdc.ida.hips.service.HIPSServerService;
-import org.scijava.app.StatusService;
-import org.scijava.event.EventService;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.UIService;
 
@@ -15,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.function.Consumer;
 
 public class HIPSClient {
 

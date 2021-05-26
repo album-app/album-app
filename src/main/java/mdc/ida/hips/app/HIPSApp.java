@@ -45,7 +45,6 @@ import org.scijava.plugin.Plugin;
 public class HIPSApp extends AbstractApp {
 
 	public static final String NAME = "HIPS";
-	public static final double PRIORITY = Priority.HIGH_PRIORITY;
 
 	@Parameter
 	private CommandService commandService;
