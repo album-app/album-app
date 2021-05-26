@@ -13,7 +13,7 @@ import java.util.Optional;
 
 public class E03_RunSolution extends AbstractHowto {
 
-	@Test
+//	@Test
 	public void run() throws IOException {
 		// use dummy server to test launcher, otherwise connect to external HIPS server launched from Python
 		int port = 1237;

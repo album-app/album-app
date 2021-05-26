@@ -143,10 +143,10 @@ public class HIPSCatalogDisplayViewer extends EasyJavaFXDisplayViewer<HIPSCatalo
 	private void addButton(TableView<HIPSolution> table, int index, String text, Consumer<HIPSolution> action) {
 		TableColumn<HIPSolution, Void> colBtn = new TableColumn<>("");
 
-		Callback<TableColumn<HIPSolution, Void>, TableCell<HIPSolution, Void>> cellFactory = new Callback<>() {
+		Callback<TableColumn<HIPSolution, Void>, TableCell<HIPSolution, Void>> cellFactory = new Callback<TableColumn<HIPSolution, Void>, TableCell<HIPSolution, Void>>() {
 			@Override
 			public TableCell<HIPSolution, Void> call(final TableColumn<HIPSolution, Void> param) {
-				return new TableCell<>() {
+				return new TableCell<HIPSolution, Void>() {
 
 					private final Button btn = new Button(text);
 

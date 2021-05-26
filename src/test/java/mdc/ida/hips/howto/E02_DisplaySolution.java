@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class E02_DisplaySolution extends AbstractHowto {
 
-	@Test
+//	@Test
 	public void run() throws IOException {
 		// use dummy server to test launcher, otherwise connect to external HIPS server launched from Python
 		int port = 1236;

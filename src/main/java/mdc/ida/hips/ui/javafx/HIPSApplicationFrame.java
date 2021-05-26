@@ -10,7 +10,6 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.TabPane;
 import javafx.scene.image.Image;
@@ -35,7 +34,6 @@ import mdc.ida.hips.service.HIPSServerService;
 import org.scijava.Context;
 import org.scijava.app.AppService;
 import org.scijava.menu.MenuService;
-import org.scijava.menu.ShadowMenu;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.ApplicationFrame;
 import org.scijava.ui.UIService;
@@ -243,19 +241,20 @@ public class HIPSApplicationFrame implements ApplicationFrame {
 		final Pane spacer = new Pane();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 		spacer.setMinSize(10, 1);
-		HBox box = new HBox(header1, header2, spacer, createMenu());
+//		HBox box = new HBox(header1, header2, spacer, createMenu());
+		HBox box = new HBox(header1, header2, spacer);
 		box.setBackground(Background.EMPTY);
 		box.setPadding(new Insets(5));
 		box.getStyleClass().add("header");
 		return box;
 	}
 
-	private Node createMenu() {
-		ShadowMenu menu = menuService.getMenu();
-		MenuButton menuBar = new MenuButton();
-		new JavaFXMenuButtonCreator().createMenus(menu, menuBar);
-		return menuBar;
-	}
+//	private Node createMenu() {
+//		ShadowMenu menu = menuService.getMenu();
+//		MenuButton menuBar = new MenuButton();
+//		new JavaFXMenuButtonCreator().createMenus(menu, menuBar);
+//		return menuBar;
+//	}
 
 	@Override
 	public void setLocation(int x, int y) {
