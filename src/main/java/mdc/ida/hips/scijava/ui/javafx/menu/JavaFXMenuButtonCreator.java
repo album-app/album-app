@@ -1,4 +1,4 @@
-package org.scijava.ui.javafx.menu;
+package mdc.ida.hips.scijava.ui.javafx.menu;
 
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;

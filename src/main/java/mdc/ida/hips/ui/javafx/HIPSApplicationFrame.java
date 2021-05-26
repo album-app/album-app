@@ -39,9 +39,9 @@ import org.scijava.menu.ShadowMenu;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.ApplicationFrame;
 import org.scijava.ui.UIService;
-import org.scijava.ui.javafx.JavaFXService;
-import org.scijava.ui.javafx.JavaFXStatusBar;
-import org.scijava.ui.javafx.menu.JavaFXMenuButtonCreator;
+import mdc.ida.hips.scijava.ui.javafx.JavaFXService;
+import mdc.ida.hips.scijava.ui.javafx.JavaFXStatusBar;
+import mdc.ida.hips.scijava.ui.javafx.menu.JavaFXMenuButtonCreator;
 
 import java.io.IOException;
 

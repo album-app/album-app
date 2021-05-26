@@ -1,4 +1,4 @@
-package org.scijava.ui.javafx.viewer;
+package mdc.ida.hips.scijava.ui.javafx.viewer;
 
 import javafx.scene.layout.VBox;
 import org.scijava.ui.viewer.DisplayPanel;

@@ -1,4 +1,4 @@
-package org.scijava.ui.javafx;
+package mdc.ida.hips.scijava.ui.javafx;
 
 public interface JavaFXUI {
 

@@ -1,4 +1,4 @@
-package org.scijava.ui.javafx;
+package mdc.ida.hips.scijava.ui.javafx;
 
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;

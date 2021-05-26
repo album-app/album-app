@@ -27,7 +27,7 @@
  * #L%
  */
 
-package org.scijava.ui.javafx;
+package mdc.ida.hips.scijava.ui.javafx;
 
 import javafx.application.Platform;
 import org.scijava.Priority;

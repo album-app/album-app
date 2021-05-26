@@ -27,7 +27,7 @@
  * #L%
  */
 
-package org.scijava.ui.javafx.widget;
+package mdc.ida.hips.scijava.ui.javafx.widget;
 
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.ScrollPane;

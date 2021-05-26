@@ -1,4 +1,4 @@
-package org.scijava.ui.javafx;
+package mdc.ida.hips.scijava.ui.javafx;
 
 import org.scijava.ui.ARGBPlane;
 import org.scijava.ui.SystemClipboard;

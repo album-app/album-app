@@ -1,7 +1,7 @@
-package org.scijava.ui.javafx.viewer;
+package mdc.ida.hips.scijava.ui.javafx.viewer;
 
 import javafx.scene.layout.VBox;
-import org.scijava.ui.javafx.JavaFXUI;
+import mdc.ida.hips.scijava.ui.javafx.JavaFXUI;
 import org.scijava.display.Display;
 import org.scijava.display.event.DisplayDeletedEvent;
 import org.scijava.object.ObjectService;

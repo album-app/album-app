@@ -1,5 +1,5 @@
 
-package org.scijava.ui.javafx.widget;
+package mdc.ida.hips.scijava.ui.javafx.widget;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;

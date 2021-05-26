@@ -1,5 +1,5 @@
 
-package org.scijava.ui.javafx.menu;
+package mdc.ida.hips.scijava.ui.javafx.menu;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;

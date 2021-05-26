@@ -1,9 +1,9 @@
-package org.scijava.ui.javafx.widget;
+package mdc.ida.hips.scijava.ui.javafx.widget;
 
 import javafx.scene.layout.HBox;
 import org.scijava.ui.AbstractUIInputWidget;
 import org.scijava.ui.UserInterface;
-import org.scijava.ui.javafx.JavaFXUI;
+import mdc.ida.hips.scijava.ui.javafx.JavaFXUI;
 import org.scijava.widget.WidgetModel;
 
 public abstract class JavaFXInputWidget<T> extends

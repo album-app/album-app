@@ -1,4 +1,4 @@
-package org.scijava.ui.javafx.widget;
+package mdc.ida.hips.scijava.ui.javafx.widget;
 
 import javafx.application.Platform;
 import javafx.scene.control.ButtonType;
@@ -12,7 +12,7 @@ import org.scijava.module.Module;
 import org.scijava.module.process.PreprocessorPlugin;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.AbstractInputHarvesterPlugin;
-import org.scijava.ui.javafx.JavaFXUI;
+import mdc.ida.hips.scijava.ui.javafx.JavaFXUI;
 import org.scijava.widget.InputHarvester;
 import org.scijava.widget.InputPanel;
 

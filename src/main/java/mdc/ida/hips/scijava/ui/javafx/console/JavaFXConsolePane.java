@@ -29,22 +29,19 @@
  * #L%
  */
 
-package org.scijava.ui.javafx.console;
+package mdc.ida.hips.scijava.ui.javafx.console;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.TextArea;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
-import mdc.ida.hips.ui.javafx.HIPSApplicationFrame;
 import org.scijava.Context;
 import org.scijava.console.OutputEvent;
 import org.scijava.ui.console.AbstractConsolePane;

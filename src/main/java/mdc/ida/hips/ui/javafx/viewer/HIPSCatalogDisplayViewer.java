@@ -29,7 +29,7 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
-import org.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
+import mdc.ida.hips.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
 import org.scijava.ui.viewer.DisplayViewer;
 
 import java.util.function.Consumer;

@@ -2,7 +2,8 @@
  * #%L
  * SciJava UI components for Java Swing.
  * %%
- * Copyright (C) 2010 - 2020 SciJava developers.
+ * Copyright (C) 2010 - 2017 Board of Regents of the University of
+ * Wisconsin-Madison.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,34 +28,25 @@
  * #L%
  */
 
-package org.scijava.ui.javafx.console;
+package mdc.ida.hips.scijava.ui.javafx;
 
-import org.scijava.command.Command;
-import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.UIService;
-import org.scijava.ui.UserInterface;
-import org.scijava.ui.console.ConsolePane;
+import org.scijava.service.AbstractService;
+import org.scijava.service.Service;
+import org.scijava.tool.IconDrawer;
+import org.scijava.tool.IconService;
+import org.scijava.tool.Tool;
 
 /**
- * Pops up the console window.
+ * JavaFX implementation of the {@link IconService}.
  *
- * @author Curtis Rueden
  */
-@Plugin(type = Command.class, menuPath = "Window > Console")
-public class ShowConsole implements Command {
-
-	@Parameter
-	private UIService uiService;
+@Plugin(type = Service.class)
+public class JavaFXIconService extends AbstractService implements IconService {
 
 	@Override
-	public void run() {
-		final UserInterface ui = uiService.getDefaultUI();
-		if (ui == null) return;
-		final ConsolePane<?> console = ui.getConsolePane();
-		if (console == null) return;
-		console.show();
+	public IconDrawer acquireDrawer(Tool t) {
+		// TODO
+		return null;
 	}
-
-
 }

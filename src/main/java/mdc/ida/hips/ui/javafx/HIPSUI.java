@@ -12,10 +12,10 @@ import org.scijava.ui.DialogPrompt;
 import org.scijava.ui.SystemClipboard;
 import org.scijava.ui.ToolBar;
 import org.scijava.ui.UserInterface;
-import org.scijava.ui.javafx.JavaFXClipboard;
-import org.scijava.ui.javafx.JavaFXStatusBar;
-import org.scijava.ui.javafx.JavaFXUI;
-import org.scijava.ui.javafx.console.JavaFXConsolePane;
+import mdc.ida.hips.scijava.ui.javafx.JavaFXClipboard;
+import mdc.ida.hips.scijava.ui.javafx.JavaFXStatusBar;
+import mdc.ida.hips.scijava.ui.javafx.JavaFXUI;
+import mdc.ida.hips.scijava.ui.javafx.console.JavaFXConsolePane;
 import org.scijava.ui.viewer.DisplayWindow;
 import org.scijava.widget.FileWidget;
 

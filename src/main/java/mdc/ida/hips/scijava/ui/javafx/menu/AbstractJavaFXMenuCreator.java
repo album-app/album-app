@@ -1,4 +1,4 @@
-package org.scijava.ui.javafx.menu;
+package mdc.ida.hips.scijava.ui.javafx.menu;
 
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
@@ -12,22 +12,16 @@ import org.scijava.menu.AbstractMenuCreator;
 import org.scijava.menu.ShadowMenu;
 import org.scijava.module.ModuleInfo;
 
-import javax.swing.ButtonGroup;
 import java.net.URL;
-import java.util.HashMap;
 
 public abstract class AbstractJavaFXMenuCreator<T> extends
 	AbstractMenuCreator<T, Menu>
 {
 
-	/** Table of button groups for radio button menu items. */
-	private HashMap<String, ButtonGroup> buttonGroups = new HashMap<>();
-
 	// -- MenuCreator methods --
 
 	@Override
 	public void createMenus(final ShadowMenu root, final T target) {
-		buttonGroups = new HashMap<>();
 		super.createMenus(root, target);
 	}
 
@@ -67,20 +61,6 @@ public abstract class AbstractJavaFXMenuCreator<T> extends
 	}
 
 	// -- Helper methods --
-
-	private boolean isSelected(final ShadowMenu shadow) {
-		return shadow.getModuleInfo().isSelected();
-	}
-
-	private ButtonGroup getButtonGroup(final ShadowMenu shadow) {
-		final String selectionGroup = shadow.getModuleInfo().getSelectionGroup();
-		ButtonGroup buttonGroup = buttonGroups.get(selectionGroup);
-		if (buttonGroup == null) {
-			buttonGroup = new ButtonGroup();
-			buttonGroups.put(selectionGroup, buttonGroup);
-		}
-		return buttonGroup;
-	}
 
 	private KeyCombination getKeyStroke(final ShadowMenu shadow) {
 		final Accelerator accelerator = shadow.getMenuEntry().getAccelerator();

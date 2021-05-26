@@ -1,4 +1,4 @@
-package org.scijava.ui.javafx.widget;
+package mdc.ida.hips.scijava.ui.javafx.widget;
 
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
