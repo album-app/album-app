@@ -9,8 +9,6 @@ import javafx.scene.layout.VBox;
 import org.scijava.ui.viewer.DisplayPanel;
 import org.scijava.ui.viewer.DisplayWindow;
 
-import java.awt.HeadlessException;
-
 /**
  * JavaFX class implementation of the {@link DisplayWindow} interface.
  *
@@ -19,7 +17,7 @@ public class HIPSDisplayWindow extends Tab implements DisplayWindow {
 
 	private VBox root;
 
-	public HIPSDisplayWindow() throws HeadlessException {
+	public HIPSDisplayWindow() {
 		root = new VBox();
 		this.setContent(root);
 	}
