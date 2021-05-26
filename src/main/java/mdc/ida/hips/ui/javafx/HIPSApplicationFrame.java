@@ -82,7 +82,7 @@ public class HIPSApplicationFrame implements ApplicationFrame {
 		VBox box = new VBox(header, placeHolder, tabPane, statusBar);
 		box.getStyleClass().add("main");
 		Scene scene = new Scene(box);
-		scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+		scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
 		window.setScene(scene);
 		window.setTitle(title);
 		window.setWidth(800);
@@ -95,7 +95,7 @@ public class HIPSApplicationFrame implements ApplicationFrame {
 	}
 
 	private Node createPlaceHolder() {
-		Image img = new Image(getClass().getResourceAsStream("/hips-scales.png"));
+		Image img = new Image(getClass().getResourceAsStream("hips-scales.png"));
 		ImageView image = new ImageView(img);
 		image.setOpacity(0.5);
 		Button button = new Button("Load collection");
@@ -143,7 +143,7 @@ public class HIPSApplicationFrame implements ApplicationFrame {
 	}
 
 	private void addWheels(Stage window) {
-		Image wheelImage = new Image(getClass().getResourceAsStream("/wheel.png"));
+		Image wheelImage = new Image(getClass().getResourceAsStream("wheel.png"));
 		ImageView imageView1 = new ImageView(wheelImage);
 		ImageView imageView2 = new ImageView(wheelImage);
 		Stage wheel1 = addWheel(imageView1);
@@ -193,7 +193,7 @@ public class HIPSApplicationFrame implements ApplicationFrame {
 		Rectangle2D bounds = Screen.getPrimary().getVisualBounds();
 		float factor = 3;
 		window.setOpacity(1.0);
-		Image wheelImage = new Image(getClass().getResourceAsStream("/wheel.gif"));
+		Image wheelImage = new Image(getClass().getResourceAsStream("wheel.gif"));
 		wheel1Image.setImage(wheelImage);
 		wheel2Image.setImage(wheelImage);
 		AnimationTimer t = new AnimationTimer() {
