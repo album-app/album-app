@@ -48,7 +48,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	private HIPSClient client;
 
 	@Override
-	public void init(HIPSOptions.Values options) {
+	public void initClient(HIPSOptions.Values options) {
 		this.client = new HIPSClient(options.port());
 		context().inject(client);
 	}

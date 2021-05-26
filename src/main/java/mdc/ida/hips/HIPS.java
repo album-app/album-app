@@ -22,7 +22,7 @@ public class HIPS extends AbstractGateway {
 	public void launch(String... args) {
 		HIPSOptions.Values options = parseOptions(Arrays.asList(args));
 		super.launch(args);
-		hipsService.init(options);
+		hipsService.initClient(options);
 	}
 
 	private HIPSOptions.Values parseOptions(List<String> list) {
