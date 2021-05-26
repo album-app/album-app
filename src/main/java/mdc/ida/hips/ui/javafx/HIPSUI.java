@@ -20,7 +20,6 @@ import org.scijava.ui.viewer.DisplayWindow;
 import org.scijava.widget.FileWidget;
 
 import java.io.File;
-import java.util.Optional;
 
 /**
  * Implementation for JavaFX-based user interfaces.
@@ -29,19 +28,19 @@ import java.util.Optional;
 @Plugin(type = UserInterface.class, name = JavaFXUI.NAME, priority = Priority.HIGH)
 public class HIPSUI extends AbstractUserInterface implements JavaFXUI {
 
-	private Optional<HIPSApplicationFrame> appFrame = Optional.empty();
-	private Optional<JavaFXStatusBar> statusBar = Optional.empty();
-	private Optional<JavaFXConsolePane> consolePane = Optional.empty();
-	private Optional<JavaFXClipboard> systemClipboard = Optional.empty();
+	private HIPSApplicationFrame appFrame;
+	private JavaFXStatusBar statusBar;
+	private JavaFXConsolePane consolePane;
+	private JavaFXClipboard systemClipboard;
 
 	@Override
 	protected void createUI() {
 		Platform.startup(() -> {
-			statusBar = Optional.of(new JavaFXStatusBar(context()));
-			consolePane = Optional.of(new JavaFXConsolePane(context()));
-			systemClipboard = Optional.of(new JavaFXClipboard());
-			appFrame = Optional.of(new HIPSApplicationFrame(context(), "HIPS", statusBar.get()));
-			consolePane.get().setTabPane(appFrame.get().getTabPane());
+			statusBar = new JavaFXStatusBar(context());
+			consolePane = new JavaFXConsolePane(context());
+			systemClipboard = new JavaFXClipboard();
+			appFrame = new HIPSApplicationFrame(context(), "HIPS", statusBar);
+			consolePane.setTabPane(appFrame.getTabPane());
 			super.createUI();
 		});
 		Platform.setImplicitExit(true);
@@ -49,7 +48,7 @@ public class HIPSUI extends AbstractUserInterface implements JavaFXUI {
 
 	@Override
 	public HIPSApplicationFrame getApplicationFrame() {
-		return appFrame.get();
+		return appFrame;
 	}
 
 	@Override
@@ -59,17 +58,17 @@ public class HIPSUI extends AbstractUserInterface implements JavaFXUI {
 
 	@Override
 	public JavaFXStatusBar getStatusBar() {
-		return statusBar.get();
+		return statusBar;
 	}
 
 	@Override
 	public JavaFXConsolePane getConsolePane() {
-		return consolePane.get();
+		return consolePane;
 	}
 
 	@Override
 	public SystemClipboard getSystemClipboard() {
-		return systemClipboard.get();
+		return systemClipboard;
 	}
 
 	@Override
