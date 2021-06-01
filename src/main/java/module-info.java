@@ -5,8 +5,8 @@ module mdc.ida.hips {
 	opens mdc.ida.hips.commands to org.scijava;
 	opens mdc.ida.hips.service to org.scijava;
 	opens mdc.ida.hips.service.conda to org.scijava;
-	opens mdc.ida.hips.ui.javafx to org.scijava;
-	opens mdc.ida.hips.ui.javafx.viewer to org.scijava;
+	opens mdc.ida.hips.ui.javafx;
+	opens mdc.ida.hips.ui.javafx.viewer;
 	opens mdc.ida.hips.scijava.ui.javafx to org.scijava;
 	opens mdc.ida.hips.scijava.ui.javafx.viewer to org.scijava;
 	opens mdc.ida.hips.scijava.ui.javafx.widget to org.scijava;

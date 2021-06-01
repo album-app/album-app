@@ -21,6 +21,8 @@ import org.scijava.plugin.Parameter;
 import org.scijava.ui.ApplicationFrame;
 import org.scijava.ui.UIService;
 
+import java.net.URL;
+
 /**
  * JavaFX implementation of {@link ApplicationFrame}.
  *
@@ -54,7 +56,11 @@ public class HIPSApplicationFrame implements ApplicationFrame {
 		VBox box = new VBox(header, tabPane, statusBar);
 		box.getStyleClass().add("main");
 		Scene scene = new Scene(box);
-		scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
+
+		//TODO make work
+//		URL stylesheet = getClass().getResource("/style.css");
+//		scene.getStylesheets().add(stylesheet.toString());
+
 		window.setScene(scene);
 		window.setTitle(title);
 		window.setWidth(800);
