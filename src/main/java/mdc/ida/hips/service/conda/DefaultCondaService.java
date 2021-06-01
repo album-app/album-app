@@ -50,19 +50,14 @@ public class DefaultCondaService extends AbstractService implements CondaService
 				return false;
 			}
 			Process p = new ProcessBuilder(condaExecutable, "--version").start();
-			String stderr = IOUtils.toString(p.getErrorStream(), Charset.defaultCharset());
-			String stdout = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
-			if(stderr != null && !stderr.isEmpty()) {
-				if(stderr.contains("ERROR")) {
-					log().error(stderr);
-					return false;
-				} else {
-					log().warn(stderr);
-				}
-			}
-			log().info(stdout + " installed.");
+			StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(), true);
+			StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(), false);
+			errorGobbler.start();
+			outputGobbler.start();
+			p.waitFor();
+			if(errorGobbler.failed) return false;
 
-		} catch (IOException e) {
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -182,6 +177,7 @@ public class DefaultCondaService extends AbstractService implements CondaService
 	class StreamGobbler extends Thread {
 		private final boolean isInfo;
 		InputStream is;
+		private boolean failed = false;
 
 		// reads everything from is until empty.
 		StreamGobbler(InputStream is, boolean isInfo) {
@@ -190,21 +186,22 @@ public class DefaultCondaService extends AbstractService implements CondaService
 		}
 
 		public void run() {
-			try {
-				InputStreamReader isr = new InputStreamReader(is);
-				BufferedReader br = new BufferedReader(isr);
+			try(InputStreamReader isr = new InputStreamReader(is);
+			    BufferedReader br = new BufferedReader(isr);) {
 				String line=null;
 				while ( (line = br.readLine()) != null) {
 					if(isInfo) {
 						log().info(line);
 					} else {
 						if(line.contains("ERROR") || line.contains("Error")) {
+							failed = true;
 							log().error(line);
 						} else {
 							log().warn(line);
 						}
 					}
 				}
+
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 			}
