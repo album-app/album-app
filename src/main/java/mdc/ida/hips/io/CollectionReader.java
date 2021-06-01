@@ -19,17 +19,18 @@ public class CollectionReader {
 		Iterator<Map.Entry<String, JsonNode>> catalogs = jsonNode.fields();
 		while (catalogs.hasNext()) {
 			Map.Entry<String, JsonNode> catalogNode = catalogs.next();
-			HIPSCatalog catalog = readCatalog(catalogNode.getValue());
-			catalog.setName(catalogNode.getKey());
+			HIPSCatalog catalog = readCatalog(catalogNode.getKey(), catalogNode.getValue());
 			collection.add(catalog);
 		}
 		return collection;
 	}
 
-	private static HIPSCatalog readCatalog(JsonNode jsonNode) {
+	private static HIPSCatalog readCatalog(String name, JsonNode jsonNode) {
 		HIPSCatalog catalog = new HIPSCatalog();
+		catalog.setName(name);
 		for (JsonNode solutionNode : jsonNode) {
 			HIPSolution solution = readHIPSolution(solutionNode);
+			solution.setCatalog(name);
 			catalog.add(solution);
 		}
 		return catalog;

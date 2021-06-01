@@ -112,12 +112,12 @@ public class HIPSCatalogDisplayViewer extends EasyJavaFXDisplayViewer<HIPSCatalo
 	}
 
 	private HBox createScaleButtons() {
-		Node btnAtom = createImageButton("/scale-atom.png");
-		Node btnMolecule = createImageButton("/scale-molecule.png");
-		Node btnCell = createImageButton("/scale-cell.png");
-		Node btnOrganism = createImageButton("/scale-organism.png");
-		Node btnTerrestrial = createImageButton("/scale-terrestrial.png");
-		Node btnUniverse = createImageButton("/scale-universe.png");
+		Node btnAtom = createImageButton("scale-atom.png");
+		Node btnMolecule = createImageButton("scale-molecule.png");
+		Node btnCell = createImageButton("scale-cell.png");
+		Node btnOrganism = createImageButton("scale-organism.png");
+		Node btnTerrestrial = createImageButton("scale-terrestrial.png");
+		Node btnUniverse = createImageButton("scale-universe.png");
 		return new HBox(btnAtom, btnMolecule, btnCell, btnOrganism, btnTerrestrial, btnUniverse);
 	}
 
@@ -146,7 +146,7 @@ public class HIPSCatalogDisplayViewer extends EasyJavaFXDisplayViewer<HIPSCatalo
 		Callback<TableColumn<HIPSolution, Void>, TableCell<HIPSolution, Void>> cellFactory = new Callback<TableColumn<HIPSolution, Void>, TableCell<HIPSolution, Void>>() {
 			@Override
 			public TableCell<HIPSolution, Void> call(final TableColumn<HIPSolution, Void> param) {
-				return new TableCell<HIPSolution, Void>() {
+				return new TableCell<>() {
 
 					private final Button btn = new Button(text);
 

@@ -1,6 +1,13 @@
 package mdc.ida.hips.scijava.ui.javafx.viewer;
 
+import javafx.scene.Node;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Paint;
 import mdc.ida.hips.scijava.ui.javafx.JavaFXUI;
 import org.scijava.display.Display;
 import org.scijava.display.event.DisplayDeletedEvent;
@@ -47,7 +54,7 @@ abstract public class EasyJavaFXDisplayViewer< T >
 
 	protected abstract void redraw();
 
-	protected abstract VBox createDisplayPanel(T value);
+	protected abstract Node createDisplayPanel(T value);
 
 	@Override
 	public void onDisplayDeletedEvent(DisplayDeletedEvent e)
@@ -60,7 +67,7 @@ abstract public class EasyJavaFXDisplayViewer< T >
 	public void view(final DisplayWindow w, final Display< ? > d) {
 		objectService.addObject(d.get(0));
 		super.view(w, d);
-		final VBox content = createDisplayPanel(getDisplay().get(0));
+		final Node content = createDisplayPanel(getDisplay().get(0));
 		setPanel(new JavaFXDisplayPanel(w, d, this, content));
 	}
 
@@ -77,7 +84,7 @@ abstract public class EasyJavaFXDisplayViewer< T >
 		// -- PlotDisplayPanel methods --
 
 		public JavaFXDisplayPanel(DisplayWindow window, Display< ? > display,
-		                          EasyJavaFXDisplayViewer< ? > viewer, VBox panel)
+		                          EasyJavaFXDisplayViewer< ? > viewer, Node panel)
 		{
 			this.window = window;
 			this.display = display;

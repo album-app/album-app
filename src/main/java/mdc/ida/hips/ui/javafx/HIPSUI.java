@@ -74,7 +74,9 @@ public class HIPSUI extends AbstractUserInterface implements JavaFXUI {
 	@Override
 	public DisplayWindow createDisplayWindow(Display<?> display) {
 		HIPSDisplayWindow window = new HIPSDisplayWindow();
-		getApplicationFrame().getTabPane().getTabs().add(window);
+		Platform.runLater(() -> {
+			getApplicationFrame().getTabPane().getTabs().add(window);
+		});
 		return window;
 	}
 

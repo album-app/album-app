@@ -36,6 +36,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 import org.scijava.thread.ThreadService;
+import org.scijava.ui.UIService;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -264,7 +265,7 @@ public final class JavaFXThreadService extends AbstractService implements
 	 */
 	public void runAndWait(final Runnable run)
 			throws InterruptedException, ExecutionException {
-		if(javaFXService.isClosing()) return;
+		if(javaFXService.isHeadless() || javaFXService.isClosing()) return;
 		if (Platform.isFxApplicationThread()) {
 			try {
 				run.run();

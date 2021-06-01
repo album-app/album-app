@@ -42,7 +42,6 @@ public class JavaFXFileWidget extends JavaFXInputWidget<File> implements FileWid
 //		path.setDragEnabled(true);
 		final String style = model.getItem().getWidgetStyle();
 		getComponent().getChildren().add(path);
-		FileChooser fileChooser = new FileChooser();
 		browse = new Button("Browse");
 		browse.setOnAction(e -> chooseFile());
 		path.textProperty().addListener((observable, oldValue, newValue) -> {

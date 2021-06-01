@@ -2,58 +2,76 @@ package mdc.ida.hips;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import mdc.ida.hips.service.HIPSServerService;
-import org.scijava.plugin.Parameter;
-import org.scijava.ui.UIService;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
+import java.io.InputStream;
 
 public class HIPSClient {
 
-    @Parameter
-    private UIService ui;
-
-    @Parameter
-    private HIPSServerService hipsService;
-
-    private Socket socket;
     private int port;
+    private String host;
+    private boolean increasePort = false;
 
-    public HIPSClient(int port) {
+    public HIPSClient(String host, int port) {
         this.port = port;
-    }
-
-    private void startSocket() throws IOException {
-        String host = "localhost";
-        System.out.println("Connecting to " + host + ":" + port);
-        socket = new Socket(host, port);
+        this.host = host;
     }
 
     public JsonNode send(String msg) throws IOException {
-        if(socket == null || socket.isClosed()) {
-            startSocket();
+        JsonNode jsonNode;
+        InputStream serverMsg = null;
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpGet getRequest = new HttpGet(host + ":" + port + msg);
+            getRequest.addHeader("accept", "application/json");
+            HttpResponse response = null;
+
+            response = httpClient.execute(getRequest);
+            int statusCode = response.getStatusLine().getStatusCode();
+            serverMsg = response.getEntity().getContent();
+            if (statusCode != 200) {
+                serverMsg.close();
+                httpClient.close();
+                //TODO user logger
+
+                System.out.println("Failed : HTTP error code : "
+                        + statusCode);
+                return null;
+            }
+
+            if(serverMsg == null) return null;
+            ObjectMapper mapper = new ObjectMapper();
+            jsonNode = null;
+            try {
+                jsonNode = mapper.readTree(serverMsg);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } finally {
+            if (serverMsg != null) {
+                serverMsg.close();
+            }
         }
-        System.out.println("sending " + msg);
-        PrintWriter out = new PrintWriter(socket.getOutputStream());
-        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        out.write(msg + "\n");
-        out.flush();
-        String serverMsg = in.readLine();
-        System.out.println("Server response: " + serverMsg);
-        in.close();
-        out.close();
-        if(serverMsg == null) return null;
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonNode = null;
+        System.out.println("Server response: " + jsonNode);
+        return jsonNode;
+    }
+
+    public void dispose() {
         try {
-            jsonNode = mapper.readTree(serverMsg);
+            send("shutdown");
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return jsonNode;
+    }
+
+    public static class ServerNotAvailableException extends RuntimeException {
+        public ServerNotAvailableException(String message) {
+            super(message);
+        }
     }
 }

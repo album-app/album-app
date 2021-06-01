@@ -3,9 +3,10 @@ package mdc.ida.hips.ui.javafx;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.event.EventHandler;
-import javafx.scene.Node;
 import javafx.scene.control.Tab;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import mdc.ida.hips.ui.javafx.viewer.LocalHIPSInstallationDisplay;
 import org.scijava.ui.viewer.DisplayPanel;
 import org.scijava.ui.viewer.DisplayWindow;
 
@@ -19,6 +20,7 @@ public class HIPSDisplayWindow extends Tab implements DisplayWindow {
 
 	public HIPSDisplayWindow() {
 		root = new VBox();
+		VBox.setVgrow(root, Priority.ALWAYS);
 		this.setContent(root);
 	}
 
@@ -29,8 +31,13 @@ public class HIPSDisplayWindow extends Tab implements DisplayWindow {
 
 	@Override
 	public void setContent(final DisplayPanel panel) {
-		root.getChildren().clear();
-		root.getChildren().add((Node) panel);
+		VBox p = (VBox) panel;
+		root = new VBox(p);
+		VBox.setVgrow(root, Priority.ALWAYS);
+		this.setContent(root);
+		if(LocalHIPSInstallationDisplay.class.isAssignableFrom(panel.getDisplay().getClass())) {
+			setClosable(false);
+		}
 	}
 
 	@Override

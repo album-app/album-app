@@ -6,8 +6,6 @@ import mdc.ida.hips.HIPS;
 import mdc.ida.hips.model.HIPSCatalog;
 import mdc.ida.hips.model.HIPSCollection;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
-import org.junit.After;
-import org.junit.Test;
 
 import java.io.IOException;
 
