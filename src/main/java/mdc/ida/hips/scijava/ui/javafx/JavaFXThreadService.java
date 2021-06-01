@@ -265,7 +265,7 @@ public final class JavaFXThreadService extends AbstractService implements
 	 */
 	public void runAndWait(final Runnable run)
 			throws InterruptedException, ExecutionException {
-		if(javaFXService.isHeadless() || javaFXService.isClosing()) return;
+		if(javaFXService.isClosing()) return;
 		if (Platform.isFxApplicationThread()) {
 			try {
 				run.run();
@@ -273,33 +273,40 @@ public final class JavaFXThreadService extends AbstractService implements
 				throw new ExecutionException(e);
 			}
 		} else {
-
 			final Lock lock = new ReentrantLock();
 			final Condition condition = lock.newCondition();
 			final ThrowableWrapper throwableWrapper = new ThrowableWrapper();
 			lock.lock();
 			try {
-				Platform.runLater(new Runnable() {
+				if(javaFXService.isHeadless()) {
+					Thread thread = new Thread(run);
+					thread.start();
+					synchronized (thread) {
+						thread.wait();
+					}
+				} else {
+					Platform.runLater(new Runnable() {
 
-					@Override
-					public void run() {
-						lock.lock();
-						try {
-							run.run();
-						} catch (Throwable e) {
-							throwableWrapper.t = e;
-						} finally {
+						@Override
+						public void run() {
+							lock.lock();
 							try {
-								condition.signal();
+								run.run();
+							} catch (Throwable e) {
+								throwableWrapper.t = e;
 							} finally {
-								lock.unlock();
+								try {
+									condition.signal();
+								} finally {
+									lock.unlock();
+								}
 							}
 						}
+					});
+					condition.await();
+					if (throwableWrapper.t != null) {
+						throw new ExecutionException(throwableWrapper.t);
 					}
-				});
-				condition.await();
-				if (throwableWrapper.t != null) {
-					throw new ExecutionException(throwableWrapper.t);
 				}
 			} finally {
 				lock.unlock();
