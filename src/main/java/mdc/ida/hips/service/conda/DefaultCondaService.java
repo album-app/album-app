@@ -204,6 +204,11 @@ public class DefaultCondaService extends AbstractService implements CondaService
 
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
+			} finally {
+				try {
+					IOUtils.close(is);
+				} catch (IOException ignored) {
+				}
 			}
 		}
 	}

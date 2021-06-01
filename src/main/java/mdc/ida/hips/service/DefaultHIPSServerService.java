@@ -182,8 +182,10 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		ProcessBuilder builder = new ProcessBuilder(command);
 		try {
 			Process process = builder.start();
-			BufferedReader error = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-			BufferedReader info = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			InputStreamReader inError = new InputStreamReader(process.getErrorStream());
+			BufferedReader error = new BufferedReader(inError);
+			InputStreamReader inInput = new InputStreamReader(process.getInputStream());
+			BufferedReader info = new BufferedReader(inInput);
 			String errorStr = error.readLine();
 			String addressInUseError = "[Errno 98] Address already in use";
 			while(errorStr != null) {
@@ -202,6 +204,10 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 				System.out.println((infoStr));
 				infoStr = info.readLine();
 			}
+			inError.close();
+			error.close();
+			inInput.close();
+			info.close();
 		} catch (IOException | IllegalStateException e) {
 			e.printStackTrace();
 		}
