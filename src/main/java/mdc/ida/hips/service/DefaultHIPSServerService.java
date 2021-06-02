@@ -14,7 +14,6 @@ import mdc.ida.hips.model.LocalHIPSInstallation;
 import mdc.ida.hips.model.RemoteHIPSInstallation;
 import mdc.ida.hips.model.SolutionArgument;
 import mdc.ida.hips.service.conda.CondaService;
-import mdc.ida.hips.service.conda.DefaultCondaService;
 import mdc.ida.hips.utils.StreamGobbler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -35,10 +34,8 @@ import org.scijava.service.Service;
 import org.scijava.ui.UIService;
 import org.scijava.widget.FileWidget;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
