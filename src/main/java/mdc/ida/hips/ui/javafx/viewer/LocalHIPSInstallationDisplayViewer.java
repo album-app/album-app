@@ -15,6 +15,7 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
@@ -34,6 +35,7 @@ import mdc.ida.hips.model.HIPSServerRunningEvent;
 import mdc.ida.hips.model.HIPSCatalog;
 import mdc.ida.hips.model.HIPSCollection;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
+import mdc.ida.hips.service.conda.CondaEnvironmentMissingEvent;
 import mdc.ida.hips.service.conda.CondaService;
 import mdc.ida.hips.service.conda.HasCondaInstalledEvent;
 import mdc.ida.hips.service.conda.CondaEnvironmentDetectedEvent;
@@ -82,10 +84,14 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 	private LocalHIPSInstallation installation;
 	private final BooleanProperty hipsRunning = new SimpleBooleanProperty(false);
 	private final BooleanProperty condaInstalled = new SimpleBooleanProperty(false);
+	private final BooleanProperty condaMissing = new SimpleBooleanProperty(false);
 	private final BooleanProperty hasHipsEnvironment = new SimpleBooleanProperty(false);
 
 	public LocalHIPSInstallationDisplayViewer() {
 		super(LocalHIPSInstallation.class);
+		condaInstalled.addListener((observable, oldValue, newValue) -> {
+			System.out.println("conda install changed: " + newValue);
+		});
 	}
 
 	@Override
@@ -98,7 +104,7 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 		this.installation = installation;
 		ImageView image = createScaleImage();
 		double imgWidth = image.getFitWidth();
-		HBox welcomeBox = createWelcomeBox(imgWidth);
+		Node welcomeBox = createWelcomeBox(imgWidth);
 		VBox content = new VBox(image, welcomeBox);
 		content.setAlignment(Pos.CENTER);
 		content.setPadding(new Insets(5));
@@ -113,6 +119,12 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 	@EventHandler
 	private void hasCondaInstalled(HasCondaInstalledEvent e) {
 		condaInstalled.set(true);
+		condaMissing.set(false);
+	}
+
+	@EventHandler
+	private void condaEnvironmentMissing(CondaEnvironmentMissingEvent e) {
+		condaMissing.set(true);
 	}
 
 	@EventHandler
@@ -127,18 +139,112 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 		return image;
 	}
 
-	private HBox createWelcomeBox(double imgWidth) {
-		HBox welcomeBox = new HBox(
+	private Node createWelcomeBox(double imgWidth) {
+		HBox appInitializingBox = createWelcomeSubBox(
+				new Label("Checking HIPS configuration..")
+		);
+		HBox condaExistsBox = createWelcomeSubBox(
 				createInstallationStatus(),
 				createLoadCollectionButton()
 		);
-		welcomeBox.setAlignment(Pos.CENTER);
-		welcomeBox.setSpacing(15);
-//		welcomeBox.setPrefWidth(imgWidth);
-//		welcomeBox.setMaxWidth(imgWidth);
-		welcomeBox.setPadding(new Insets(15));
-//		welcomeBox.setBackground(new Background(new BackgroundFill(new Color(1.0, 1.0, 1.0, 0.5), new CornerRadii(10), Insets.EMPTY)));
-		return welcomeBox;
+		VBox condaMissingBox = createWelcomeSubBoxVertial(
+				new Label("Ready to set up HIPS?"),
+				createSetupHIPSBox()
+
+		);
+		appInitializingBox.setVisible(!condaInstalled.get() && !condaMissing.get());
+		condaExistsBox.setVisible(condaInstalled.get());
+		condaMissingBox.setVisible(condaMissing.get());
+		appInitializingBox.visibleProperty().bind(Bindings.createBooleanBinding(
+				() -> !condaMissing.get() && !condaInstalled.get(), condaMissing, condaInstalled));
+		appInitializingBox.managedProperty().bind(appInitializingBox.visibleProperty());
+		condaExistsBox.visibleProperty().bind(Bindings.createBooleanBinding(condaInstalled::get, condaInstalled));
+		condaExistsBox.managedProperty().bind(condaExistsBox.visibleProperty());
+		condaMissingBox.visibleProperty().bind(Bindings.createBooleanBinding(condaMissing::get, condaMissing));
+		condaMissingBox.managedProperty().bind(condaMissingBox.visibleProperty());
+		return new VBox(appInitializingBox, condaMissingBox, condaExistsBox);
+	}
+
+	private Node createSetupHIPSBox() {
+		Button startHIPSButton = new Button("Let's go!");
+		RadioButton downloadConda = new RadioButton("Download Miniconda to..");
+		RadioButton useExistingConda = new RadioButton("Use existing conda:");
+		downloadConda.setSelected(true);
+		ToggleGroup group = new ToggleGroup();
+		group.getToggles().add(downloadConda);
+		group.getToggles().add(useExistingConda);
+		StringProperty downloadTarget = new SimpleStringProperty();
+		String condaPath = "";
+		startHIPSButton.setOnAction(event -> {
+			try {
+				initHIPSInstallation(downloadConda, downloadTarget);
+			} catch (IOException | InterruptedException e) {
+				e.printStackTrace();
+			}
+		});
+		return new VBox(
+				createFileChooserAction(
+						downloadConda,
+						new File(System.getProperty("user.home"), "miniconda").getAbsolutePath(),
+						file -> {
+							if (file == null) return;
+							File[] files = file.listFiles();
+							if (files != null && files.length > 0) {
+								file = new File(file, "miniconda");
+							}
+							downloadTarget.set(file.getAbsolutePath());
+						},
+						null, null
+				),
+				createFileChooserAction(
+						useExistingConda,
+						condaPath,
+						file1 -> {
+							installation.setCondaPath(file1);
+							condaService.setDefaultCondaPath(file1);
+						}, null, null
+				),
+				startHIPSButton);
+	}
+
+	private void initHIPSInstallation(RadioButton downloadConda, StringProperty downloadTarget) throws IOException, InterruptedException {
+		if(downloadConda.isSelected()) {
+			downloadAndInstallConda(downloadTarget);
+			installation.setCondaPath(new File(downloadTarget.get()));
+		} else {
+			checkCondaLocation();
+		}
+		if(!condaService.checkIfCondaInstalled(installation.getCondaPath())) {
+			logService.error("Cannot find conda in " + installation.getCondaPath());
+			return;
+		}
+		if(!hasHipsEnvironment.get()) {
+			condaService.createEnvironment(installation.getCondaPath(), hipsService.getEnvironmentFile());
+		}
+		if(hipsService.checkIfHIPSEnvironmentExists(installation)) {
+			hipsService.runAsynchronously(installation);
+		} else {
+			logService.error("Could not install hips environment using conda " + installation.getCondaPath());
+		}
+		return;
+	}
+
+	private HBox createWelcomeSubBox(Node... nodes) {
+		HBox condaMissingBox = new HBox(nodes);
+		condaMissingBox.setAlignment(Pos.CENTER);
+		condaMissingBox.setSpacing(15);
+		condaMissingBox.setPadding(new Insets(15));
+		condaMissingBox.setBackground(new Background(new BackgroundFill(new Color(1.0, 1.0, 1.0, 0.5), new CornerRadii(10), Insets.EMPTY)));
+		return condaMissingBox;
+	}
+
+	private VBox createWelcomeSubBoxVertial(Node... nodes) {
+		VBox condaMissingBox = new VBox(nodes);
+		condaMissingBox.setAlignment(Pos.CENTER);
+		condaMissingBox.setSpacing(15);
+		condaMissingBox.setPadding(new Insets(15));
+		condaMissingBox.setBackground(new Background(new BackgroundFill(new Color(1.0, 1.0, 1.0, 0.5), new CornerRadii(10), Insets.EMPTY)));
+		return condaMissingBox;
 	}
 
 	private Node createInstallationStatus() {
@@ -154,7 +260,7 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 
 	private void configureHips() {
 		VBox content = new VBox(
-				createCondaStatus(),
+				createCondaStatus(true),
 				createHIPSEnvironmentStatus());
 		ButtonType startHIPSButtonType = new ButtonType("Start HIPS service", ButtonBar.ButtonData.OK_DONE);
 		ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
@@ -206,8 +312,10 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 		return res;
 	}
 
-	private Node createCondaStatus() {
-		Text title = getStatusText(condaInstalled, "Conda is accessible", "Conda is not accessible");
+	private Node createCondaStatus(boolean withActions) {
+		Text title = withActions?
+				getStatusText(condaInstalled, "Conda is accessible", "Conda is not accessible")
+				: new Text("Conda");
 		RadioButton downloadConda = new RadioButton("Download Miniconda to..");
 		RadioButton useExistingConda = new RadioButton("Use existing conda:");
 		downloadConda.setSelected(installation.getCondaPath() == null);
@@ -235,12 +343,7 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 				downloadTarget.set(file.getAbsolutePath());
 			}, new Action("Download", () -> {
 				try {
-					if(downloadTarget.isEmpty().get()) return;
-					File condaPath = new File(downloadTarget.get());
-					installation.setCondaPath(condaPath);
-					condaService.setDefaultCondaPath(condaPath);
-					condaService.installConda(condaPath);
-					condaInstalled.set(condaService.checkIfCondaInstalled(condaPath));
+					downloadAndInstallConda(downloadTarget);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -251,6 +354,15 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 				return !downloadConda.isSelected() && target.exists() && target.isDirectory();
 			}, downloadConda.selectedProperty())
 		);
+	}
+
+	private void downloadAndInstallConda(StringProperty downloadTarget) throws IOException {
+		if(downloadTarget.isEmpty().get()) return;
+		File condaPath = new File(downloadTarget.get());
+		installation.setCondaPath(condaPath);
+		condaService.setDefaultCondaPath(condaPath);
+		condaService.installConda(condaPath);
+		condaInstalled.set(condaService.checkIfCondaInstalled(condaPath));
 	}
 
 	private HBox existingCondaBox(RadioButton useExistingConda) {
@@ -265,17 +377,22 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 				installation.setCondaPath(file);
 				condaService.setDefaultCondaPath(file);
 			}, new Action("Confirm", () -> {
-				condaInstalled.set(condaService.checkIfCondaInstalled(installation.getCondaPath()));
-				if(condaInstalled.get()) {
-					hasHipsEnvironment.set(hipsService.checkIfHIPSEnvironmentExists(installation));
-				}
-			}),
+					checkCondaLocation();
+				}),
 			Bindings.createBooleanBinding(() -> !useExistingConda.isSelected(), useExistingConda.selectedProperty())
 		);
 	}
 
+	private void checkCondaLocation() {
+		condaInstalled.set(condaService.checkIfCondaInstalled(installation.getCondaPath()));
+		if(condaInstalled.get()) {
+			hasHipsEnvironment.set(hipsService.checkIfHIPSEnvironmentExists(installation));
+		}
+	}
+
 	private HBox createFileChooserAction(RadioButton initialButton, String initialValue, Consumer<File> resultHandler, Action confirmAction, Binding<Boolean> confirmBinding) {
 		TextField path = new TextField(initialValue);
+		resultHandler.accept(new File(initialValue));
 		Button browse = new Button("Browse");
 		browse.setOnAction(e -> {
 			File file = new File(path.getText());
@@ -293,14 +410,19 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 				resultHandler.accept(file);
 			}
 		});
-		Button confirmButton = new Button(confirmAction.name);
-		confirmButton.setOnAction(event -> confirmAction.runnable.run());
 		initialButton.setMinWidth(200);
-		confirmButton.setMinWidth(100);
-		path.disableProperty().bind(Bindings.createBooleanBinding(() -> !initialButton.isSelected(), initialButton.selectedProperty()));
-		browse.disableProperty().bind(Bindings.createBooleanBinding(() -> !initialButton.isSelected(), initialButton.selectedProperty()));
-		confirmButton.disableProperty().bind(confirmBinding);
-		HBox res = new HBox(initialButton, path, browse, confirmButton);
+		HBox res;
+		if(confirmAction != null) {
+			Button confirmButton = new Button(confirmAction.name);
+			confirmButton.setMinWidth(100);
+			confirmButton.setOnAction(event -> confirmAction.runnable.run());
+			path.disableProperty().bind(Bindings.createBooleanBinding(() -> !initialButton.isSelected(), initialButton.selectedProperty()));
+			browse.disableProperty().bind(Bindings.createBooleanBinding(() -> !initialButton.isSelected(), initialButton.selectedProperty()));
+			confirmButton.disableProperty().bind(confirmBinding);
+			res = new HBox(initialButton, path, browse, confirmButton);
+		} else {
+			res = new HBox(initialButton, path, browse);
+		}
 		res.setSpacing(15);
 		return res;
 	}

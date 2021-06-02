@@ -120,10 +120,11 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 
 	@Override
 	public void runWithChecks(LocalHIPSInstallation installation) throws IOException, InterruptedException {
-		if(condaService.checkIfCondaInstalled(installation.getCondaPath())) {
-			if(checkIfHIPSEnvironmentExists(installation)) {
-				runAsynchronously(installation);
-			}
+		if(condaService.checkIfCondaInstalled(installation.getCondaPath())
+				&& checkIfHIPSEnvironmentExists(installation)) {
+			runAsynchronously(installation);
+		} else {
+			eventService.publish(new CondaEnvironmentMissingEvent());
 		}
 	}
 

@@ -37,7 +37,6 @@ public class HIPS extends AbstractGateway {
 		super.launch(args);
 		try {
 			HIPSInstallation installation = loadInstallation(options);
-			ui().show("Welcome", installation);
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -62,6 +61,7 @@ public class HIPS extends AbstractGateway {
 		} else {
 			LocalHIPSInstallation localInstallation = hipsService.loadLocalInstallation();
 			if(options.port().isPresent()) localInstallation.setPort(options.port().get());
+			ui().show("Welcome", localInstallation);
 			hipsService.runWithChecks(localInstallation);
 			return localInstallation;
 		}

@@ -57,9 +57,7 @@ public class HIPSApplicationFrame implements ApplicationFrame {
 		box.getStyleClass().add("main");
 		Scene scene = new Scene(box);
 
-		//TODO make work
-//		URL stylesheet = getClass().getResource("/style.css");
-//		scene.getStylesheets().add(stylesheet.toString());
+		scene.getStylesheets().add(getClass().getResource("style.css").toString());
 
 		window.setScene(scene);
 		window.setTitle(title);

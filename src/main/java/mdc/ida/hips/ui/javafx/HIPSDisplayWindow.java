@@ -35,6 +35,8 @@ public class HIPSDisplayWindow extends Tab implements DisplayWindow {
 		root = new VBox(p);
 		VBox.setVgrow(root, Priority.ALWAYS);
 		this.setContent(root);
+
+		//TODO this is bad design
 		if(LocalHIPSInstallationDisplay.class.isAssignableFrom(panel.getDisplay().getClass())) {
 			setClosable(false);
 		}

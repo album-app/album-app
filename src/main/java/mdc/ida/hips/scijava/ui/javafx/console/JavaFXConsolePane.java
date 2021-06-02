@@ -57,6 +57,8 @@ public class JavaFXConsolePane extends AbstractConsolePane<TextFlow> {
 	private final Tab tab;
 	private TabPane tabs;
 
+	private final static String alertClass = "alert";
+
 	public JavaFXConsolePane(final Context context) {
 		super(context);
 		this.box = new TextFlow();
@@ -65,6 +67,11 @@ public class JavaFXConsolePane extends AbstractConsolePane<TextFlow> {
 		ScrollPane content = new ScrollPane(box);
 		content.setStyle("-fx-background: #000000;");
 		tab = new Tab("Console", content);
+		tab.selectedProperty().addListener((observable, oldValue, newValue) -> {
+			if(newValue) {
+				tab.getStyleClass().remove(alertClass);
+			}
+		});
 	}
 
 	@Override
@@ -84,7 +91,7 @@ public class JavaFXConsolePane extends AbstractConsolePane<TextFlow> {
 			if(tabs == null) return;
 			if(tabs.getTabs() == null) return;
 			if(tabs.getTabs().contains(tab)) {
-				tabs.getSelectionModel().select(tab);
+				if(!tab.getStyleClass().contains(alertClass)) tab.getStyleClass().add(alertClass);
 			} else {
 				tabs.getTabs().add(tab);
 			}
