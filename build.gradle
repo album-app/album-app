@@ -6,6 +6,7 @@ plugins {
     id 'maven-publish'
     id 'signing'
     id 'org.beryx.jlink' version '2.24.0'
+    id("org.javamodularity.moduleplugin") version "1.8.6"
 }
 
 repositories {
@@ -122,3 +123,8 @@ jlink {
     }
 }
 
+sourceSets {
+    main {
+        output.setResourcesDir(java.outputDir)
+    }
+}
