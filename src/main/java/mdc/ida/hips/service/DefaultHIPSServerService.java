@@ -13,6 +13,7 @@ import mdc.ida.hips.model.HIPSolution;
 import mdc.ida.hips.model.LocalHIPSInstallation;
 import mdc.ida.hips.model.RemoteHIPSInstallation;
 import mdc.ida.hips.model.SolutionArgument;
+import mdc.ida.hips.service.conda.CondaEnvironmentMissingEvent;
 import mdc.ida.hips.service.conda.CondaService;
 import mdc.ida.hips.utils.StreamGobbler;
 import org.apache.commons.io.FileUtils;
@@ -94,7 +95,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	public void updateIndex(Consumer<HIPSCollectionUpdatedEvent> callback) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "index";
-		JsonNode response = client.send(createHIPSRequest(mapper, actionName));
+		JsonNode response = client.send(client.createHIPSRequest(mapper, actionName));
 		if(response == null) return;
 		statusService.showStatus("Updated HIPS collection.");
 		HIPSCollectionUpdatedEvent event = new HIPSCollectionUpdatedEvent(CollectionReader.readCollection(response));
@@ -108,7 +109,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "";
 		try {
-			JsonNode response = client.send(createHIPSRequest(mapper, actionName));
+			JsonNode response = client.send(client.createHIPSRequest(mapper, actionName));
 			boolean running = response != null;
 			if(running) eventService.publish(new HIPSServerRunningEvent());
 			return running;
@@ -148,6 +149,8 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 					}
 				}
 			}, 0, 1000);
+		} else {
+			eventService.publish(new CondaEnvironmentMissingEvent());
 		}
 	}
 
@@ -192,11 +195,12 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 			StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream(), log()) {
 				@Override
 				public void handleLog(String line) {
-					super.handleLog(line);
 					if(line.contains(addressInUseError)) {
 //						process.destroy();
 						portInUse.set(true);
 						this.streamClosed = true;
+					} else {
+						super.handleLog(line);
 					}
 				}
 			};
@@ -266,33 +270,11 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		}
 		System.out.println("launching " + solution.getGroup() + ":" + solution.getName() + ":" + solution.getVersion() + "...");
 		try {
-			JsonNode response = client.send(createHIPSRequest(mapper, path, solutionArgs));
+			JsonNode response = client.send(client.createHIPSRequest(mapper, path, solutionArgs));
 			//TODO handle response if there is one
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	private String createHIPSRequest(ObjectMapper mapper, String actionName) {
-		return createHIPSRequest(mapper, actionName, mapper.createObjectNode());
-	}
-
-	private String createHIPSRequest(ObjectMapper mapper, String actionName, ObjectNode actionArgs) {
-		ObjectNode request = mapper.createObjectNode();
-		request.put("action", actionName);
-		request.set("args", actionArgs);
-		StringBuilder s = new StringBuilder("/" + actionName);
-		if(actionArgs != null && actionArgs.size() > 0) {
-			AtomicReference<Boolean> first = new AtomicReference<>(true);
-			actionArgs.fieldNames().forEachRemaining(name -> {
-				s.append(first.get() ? "?" : "&");
-				s.append(name);
-				s.append("=");
-				s.append(actionArgs.get(name).asText());
-				first.set(false);
-			});
-		}
-		return s.toString();
 	}
 
 	private ModuleItem<?> createModuleItem(DynamicCommandInfo info, SolutionArgument arg) {
