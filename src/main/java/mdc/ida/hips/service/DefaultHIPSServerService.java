@@ -14,6 +14,8 @@ import mdc.ida.hips.model.LocalHIPSInstallation;
 import mdc.ida.hips.model.RemoteHIPSInstallation;
 import mdc.ida.hips.model.SolutionArgument;
 import mdc.ida.hips.service.conda.CondaService;
+import mdc.ida.hips.service.conda.DefaultCondaService;
+import mdc.ida.hips.utils.StreamGobbler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.scijava.Disposable;
@@ -120,11 +122,16 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 
 	@Override
 	public void runWithChecks(LocalHIPSInstallation installation) throws IOException, InterruptedException {
-		if(condaService.checkIfEnvironmentExists(installation.getCondaPath(), HIPS_ENVIRONMENT_NAME)) {
-			if(condaService.checkIfCondaInstalled(installation.getCondaPath())) {
+		if(condaService.checkIfCondaInstalled(installation.getCondaPath())) {
+			if(checkIfHIPSEnvironmentExists(installation)) {
 				runAsynchronously(installation);
 			}
 		}
+	}
+
+	@Override
+	public boolean checkIfHIPSEnvironmentExists(LocalHIPSInstallation installation) {
+		return condaService.checkIfEnvironmentExists(installation.getCondaPath(), HIPS_ENVIRONMENT_NAME);
 	}
 
 	@Override
@@ -171,6 +178,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	}
 
 	private void tryToStartServer(LocalHIPSInstallation installation, File condaPath, String environmentPath) throws IOException {
+		log.info("Trying to start the HIPS server locally on port " + installation.getPort() + "..");
 		String[] command;
 		String commandInCondaEnv = "run --no-capture-output --prefix " + environmentPath + " hips server --port " + installation.getPort();
 		if(SystemUtils.IS_OS_WINDOWS) {
@@ -178,38 +186,35 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		} else {
 			command = condaService.createCondaCommandLinuxMac(condaPath, commandInCondaEnv);
 		}
-		System.out.println(Arrays.toString(command));
+		log().info(Arrays.toString(command));
 		ProcessBuilder builder = new ProcessBuilder(command);
+		final AtomicReference<Boolean> portInUse = new AtomicReference<>(false);
 		try {
 			Process process = builder.start();
-			InputStreamReader inError = new InputStreamReader(process.getErrorStream());
-			BufferedReader error = new BufferedReader(inError);
-			InputStreamReader inInput = new InputStreamReader(process.getInputStream());
-			BufferedReader info = new BufferedReader(inInput);
-			String errorStr = error.readLine();
 			String addressInUseError = "[Errno 98] Address already in use";
-			while(errorStr != null) {
-				System.out.println((errorStr));
-				if(errorStr.contains(addressInUseError)) {
-					process.destroy();
-					installation.setPort(installation.getPort()+1);
-					log.warn("Prort " + (installation.getPort()-1) + " is already in use, "
-					+ " trying port " + installation.getPort() + " next.");
-					tryToStartServer(installation, condaPath, environmentPath);
+			StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream(), log()) {
+				@Override
+				public void handleLog(String line) {
+					super.handleLog(line);
+					if(line.contains(addressInUseError)) {
+//						process.destroy();
+						portInUse.set(true);
+						this.streamClosed = true;
+					}
 				}
-				errorStr = error.readLine();
-			}
-			String infoStr = info.readLine();
-			while(infoStr != null) {
-				System.out.println((infoStr));
-				infoStr = info.readLine();
-			}
-			inError.close();
-			error.close();
-			inInput.close();
-			info.close();
-		} catch (IOException | IllegalStateException e) {
+			};
+			StreamGobbler outputGobbler = new StreamGobbler(process.getInputStream(), log());
+			errorGobbler.start();
+			outputGobbler.start();
+			process.waitFor();
+		} catch (IOException | IllegalStateException | InterruptedException e) {
 			e.printStackTrace();
+		}
+		if(portInUse.get()) {
+			installation.setPort(installation.getPort()+1);
+			log.warn("Port " + (installation.getPort()-1) + " is already in use, "
+					+ " trying port " + installation.getPort() + " next.");
+			tryToStartServer(installation, condaPath, environmentPath);
 		}
 	}
 

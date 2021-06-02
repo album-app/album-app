@@ -1,6 +1,7 @@
 package mdc.ida.hips.service.conda;
 
 import mdc.ida.hips.service.DefaultHIPSServerService;
+import mdc.ida.hips.utils.StreamGobbler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -50,12 +51,12 @@ public class DefaultCondaService extends AbstractService implements CondaService
 				return false;
 			}
 			Process p = new ProcessBuilder(condaExecutable, "--version").start();
-			StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(), true);
-			StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(), false);
+			StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(), log());
+			StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(), log());
 			errorGobbler.start();
 			outputGobbler.start();
 			p.waitFor();
-			if(errorGobbler.failed) return false;
+			if(errorGobbler.failed()) return false;
 
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
@@ -92,11 +93,8 @@ public class DefaultCondaService extends AbstractService implements CondaService
 			command = createCondaCommandLinuxMac(condaPath, commandInCondaEnv);
 		}
 		log().info("Running " + Arrays.toString(command));
-		Process p = new ProcessBuilder(command).start();
-		StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(), true);
-		StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(), false);
-		errorGobbler.start();
-		outputGobbler.start();
+		Process p = new ProcessBuilder(command)
+				.inheritIO().start();
 		p.waitFor();
 	}
 
@@ -174,43 +172,6 @@ public class DefaultCondaService extends AbstractService implements CondaService
 		return scriptFile;
 	}
 
-	class StreamGobbler extends Thread {
-		private final boolean isInfo;
-		InputStream is;
-		private boolean failed = false;
 
-		// reads everything from is until empty.
-		StreamGobbler(InputStream is, boolean isInfo) {
-			this.is = is;
-			this.isInfo = isInfo;
-		}
-
-		public void run() {
-			try(InputStreamReader isr = new InputStreamReader(is);
-			    BufferedReader br = new BufferedReader(isr);) {
-				String line=null;
-				while ( (line = br.readLine()) != null) {
-					if(isInfo) {
-						log().info(line);
-					} else {
-						if(line.contains("ERROR") || line.contains("Error")) {
-							failed = true;
-							log().error(line);
-						} else {
-							log().warn(line);
-						}
-					}
-				}
-
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-			} finally {
-				try {
-					IOUtils.close(is);
-				} catch (IOException ignored) {
-				}
-			}
-		}
-	}
 
 }

@@ -75,7 +75,7 @@ public class JavaFXConsolePane extends AbstractConsolePane<TextFlow> {
 		} else {
 			text.setFill(Color.WHITE);
 		}
-		box.getChildren().add(text);
+		Platform.runLater(() -> box.getChildren().add(text));
 	}
 
 	@Override

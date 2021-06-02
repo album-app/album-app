@@ -17,6 +17,9 @@ public interface HIPSServerService extends SciJavaService {
 	void launchSolution(HIPSolution solution);
 	void launchSolutionAsTutorial(HIPSolution solution);
 	void updateIndex(Consumer<HIPSCollectionUpdatedEvent> callback) throws IOException;
+
+	boolean checkIfHIPSEnvironmentExists(LocalHIPSInstallation installation);
+
 	void runAsynchronously(LocalHIPSInstallation installation) throws IOException, InterruptedException;
 	void runWithChecks(LocalHIPSInstallation installation) throws IOException, InterruptedException;
 	File getEnvironmentFile() throws IOException;

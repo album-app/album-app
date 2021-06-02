@@ -80,9 +80,9 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 	private CondaService condaService;
 
 	private LocalHIPSInstallation installation;
-	private final BooleanProperty hipsRunning = new SimpleBooleanProperty();
-	private final BooleanProperty condaInstalled = new SimpleBooleanProperty();
-	private final BooleanProperty hasHipsEnvironment = new SimpleBooleanProperty();
+	private final BooleanProperty hipsRunning = new SimpleBooleanProperty(false);
+	private final BooleanProperty condaInstalled = new SimpleBooleanProperty(false);
+	private final BooleanProperty hasHipsEnvironment = new SimpleBooleanProperty(false);
 
 	public LocalHIPSInstallationDisplayViewer() {
 		super(LocalHIPSInstallation.class);
@@ -170,7 +170,6 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 		new Thread(() -> {
 			try {
 				hipsService.runAsynchronously(installation);
-				hipsRunning.set(hipsService.checkIfRunning(installation));
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -225,7 +224,6 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 
 	private HBox downloadCondaBox(RadioButton downloadConda) {
 		StringProperty downloadTarget = new SimpleStringProperty();
-		File condaPath = new File(downloadTarget.get());
 		return createFileChooserAction(
 			downloadConda,
 				new File(System.getProperty("user.home"), "miniconda").getAbsolutePath(),
@@ -237,6 +235,8 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 				downloadTarget.set(file.getAbsolutePath());
 			}, new Action("Download", () -> {
 				try {
+					if(downloadTarget.isEmpty().get()) return;
+					File condaPath = new File(downloadTarget.get());
 					installation.setCondaPath(condaPath);
 					condaService.setDefaultCondaPath(condaPath);
 					condaService.installConda(condaPath);
@@ -247,7 +247,7 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 			}),
 			Bindings.createBooleanBinding(() -> {
 				if(downloadTarget.isEmpty().get()) return false;
-				File target = condaPath;
+				File target = new File(downloadTarget.get());
 				return !downloadConda.isSelected() && target.exists() && target.isDirectory();
 			}, downloadConda.selectedProperty())
 		);
@@ -266,6 +266,9 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 				condaService.setDefaultCondaPath(file);
 			}, new Action("Confirm", () -> {
 				condaInstalled.set(condaService.checkIfCondaInstalled(installation.getCondaPath()));
+				if(condaInstalled.get()) {
+					hasHipsEnvironment.set(hipsService.checkIfHIPSEnvironmentExists(installation));
+				}
 			}),
 			Bindings.createBooleanBinding(() -> !useExistingConda.isSelected(), useExistingConda.selectedProperty())
 		);

@@ -1,6 +1,5 @@
 package mdc.ida.hips;
 
-import javafx.application.Platform;
 import mdc.ida.hips.app.HIPSApp;
 import mdc.ida.hips.model.HIPSInstallation;
 import mdc.ida.hips.model.LocalHIPSInstallation;
