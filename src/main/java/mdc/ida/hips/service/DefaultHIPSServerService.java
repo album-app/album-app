@@ -41,6 +41,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
@@ -73,7 +74,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 
 	private HIPSClient client;
 
-	private static final String HIPS_ENVIRONMENT_URL = "https://gitlab.com/ida-mdc/hips/-/raw/hips-server/hips.yml";
+	private static final String HIPS_ENVIRONMENT_URL = "https://gitlab.com/ida-mdc/hips/-/raw/main/hips.yml";
 	private static final String HIPS_PREF_LOCAL_PORT = "hips.local.port";
 	private Thread serverThread;
 
@@ -104,14 +105,17 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	}
 
 	@Override
-	public boolean checkIfRunning(LocalHIPSInstallation installation) {
+	public boolean checkIfRunning(LocalHIPSInstallation installation, Runnable callback) {
 		if(client == null) return false;
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "";
 		try {
 			JsonNode response = client.send(client.createHIPSRequest(mapper, actionName));
 			boolean running = response != null;
-			if(running) eventService.publish(new HIPSServerRunningEvent());
+			if(running) {
+				callback.run();
+				eventService.publish(new HIPSServerRunningEvent());
+			}
 			return running;
 		} catch (HIPSClient.ServerNotAvailableException | IOException e) {
 			return false;
@@ -134,7 +138,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	}
 
 	@Override
-	public void runAsynchronously(LocalHIPSInstallation installation) throws IOException, InterruptedException {
+	public void runAsynchronously(LocalHIPSInstallation installation, Runnable callback) {
 		String condaExecutable = condaService.getCondaExecutable(installation.getCondaPath());
 		String environmentPath = condaService.getEnvironmentPath(installation.getCondaPath());
 		if(new File(condaExecutable).exists()) {
@@ -145,7 +149,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 				@Override
 				public void run() {
 					initClient(installation);
-					if(checkIfRunning(installation)) {
+					if(checkIfRunning(installation, callback)) {
 						timer.cancel();
 					}
 				}
@@ -158,6 +162,19 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	@Override
 	public File getEnvironmentFile() throws IOException {
 		return downloadTmpFile(HIPS_ENVIRONMENT_URL, "hips.yml");
+	}
+
+	@Override
+	public void addCatalog(LocalHIPSInstallation installation, String urlOrPath) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		String actionName = "catalogs/add";
+		ObjectNode solutionArgs = mapper.createObjectNode();
+		solutionArgs.put("url", urlOrPath);
+		JsonNode response = client.send(client.createHIPSRequest(mapper, actionName));
+		if(response == null) return;
+		statusService.showStatus("Added catalog " + urlOrPath + " to HIPS collection.");
+		HIPSCollectionUpdatedEvent event = new HIPSCollectionUpdatedEvent(CollectionReader.readCollection(response));
+		eventService.publish(event);
 	}
 
 	private File downloadTmpFile(String url, String name) throws IOException {
@@ -189,6 +206,8 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		}
 		log().info(Arrays.toString(command));
 		ProcessBuilder builder = new ProcessBuilder(command);
+		Map<String, String> env = builder.environment();
+		env.put("HIPS_DEFAULT_CATALOG", installation.getDefaultCatalog());
 		final AtomicReference<Boolean> portInUse = new AtomicReference<>(false);
 		try {
 			Process process = builder.start();

@@ -24,3 +24,7 @@
 .alert {
     -fx-background-color: #ffaaaa;
 }
+
+.bold {
+    -fx-font-weight: bold;
+}

@@ -6,6 +6,7 @@ public class LocalHIPSInstallation implements HIPSInstallation {
 
 	private int port;
 	private File condaPath;
+	private String defaultCatalog;
 
 	public LocalHIPSInstallation(int port) {
 		this.port = port;
@@ -41,5 +42,13 @@ public class LocalHIPSInstallation implements HIPSInstallation {
 
 	synchronized public void setPort(int port) {
 		this.port = port;
+	}
+
+	public String getDefaultCatalog() {
+		return defaultCatalog;
+	}
+
+	public void setDefaultCatalog(String defaultCatalog) {
+		this.defaultCatalog = defaultCatalog;
 	}
 }
