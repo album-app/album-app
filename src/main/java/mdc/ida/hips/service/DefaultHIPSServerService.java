@@ -200,7 +200,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	private void tryToStartServer(LocalHIPSInstallation installation, File condaPath, String environmentPath) throws IOException {
 		log.info("Trying to start the HIPS server locally on port " + installation.getPort() + "..");
 		String[] command;
-		String commandInCondaEnv = "run --no-capture-output --prefix " + environmentPath + " hips server --port " + installation.getPort();
+		String commandInCondaEnv = "run --no-capture-output --prefix " + environmentPath + " python hips server --port " + installation.getPort();
 		if(SystemUtils.IS_OS_WINDOWS) {
 			command = condaService.createCondaCommandWindows(condaPath, commandInCondaEnv);
 		} else {
