@@ -2,7 +2,7 @@ package mdc.ida.hips;
 
 import mdc.ida.hips.model.HIPSCatalog;
 import mdc.ida.hips.model.HIPSCollection;
-import mdc.ida.hips.model.HIPSServerRunningEvent;
+import mdc.ida.hips.model.HIPSServerThreadDoneEvent;
 import mdc.ida.hips.model.LocalHIPSInstallation;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +28,7 @@ public class HIPSIntegrationTest {
 	File folder;
 
 	private HIPS hips;
-	private CompletableFuture<HIPSServerRunningEvent> futureHipsRunning;
+	private CompletableFuture<HIPSServerThreadDoneEvent> futureHipsServerThread;
 
 	@BeforeEach
 	void setUp() throws Exception {
@@ -72,11 +72,12 @@ public class HIPSIntegrationTest {
 
 		assertEquals(path, installation.getCondaPath());
 
-		futureHipsRunning = new CompletableFuture<>();
+		futureHipsServerThread = new CompletableFuture<>();
 		hips.event().subscribe(this);
 		hips.server().runAsynchronously(installation);
-		futureHipsRunning.get();
+		HIPSServerThreadDoneEvent serverThreadDone = futureHipsServerThread.get();
 
+		assertTrue(serverThreadDone.isSuccess());
 		assertTrue(hips.server().checkIfRunning(installation));
 
 		CompletableFuture<HIPSCollection> futureCollectionReturned = new CompletableFuture<>();
@@ -95,7 +96,7 @@ public class HIPSIntegrationTest {
 	}
 
 	@EventHandler
-	void hipsStarted(HIPSServerRunningEvent e) {
-		futureHipsRunning.complete(e);
+	void hipsServerDone(HIPSServerThreadDoneEvent e) {
+		futureHipsServerThread.complete(e);
 	}
 }

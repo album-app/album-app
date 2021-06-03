@@ -8,7 +8,7 @@ import mdc.ida.hips.io.CollectionReader;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
 import mdc.ida.hips.model.HIPSInstallation;
 import mdc.ida.hips.model.HIPSLaunchRequestEvent;
-import mdc.ida.hips.model.HIPSServerRunningEvent;
+import mdc.ida.hips.model.HIPSServerThreadDoneEvent;
 import mdc.ida.hips.model.HIPSolution;
 import mdc.ida.hips.model.LocalHIPSInstallation;
 import mdc.ida.hips.model.RemoteHIPSInstallation;
@@ -37,9 +37,7 @@ import org.scijava.widget.FileWidget;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Timer;
@@ -79,6 +77,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	private static final String HIPS_DEFAULT_CATALOG_URL = "https://gitlab.com/ida-mdc/capture-knowledge";
 
 	private Thread serverThread;
+	final AtomicReference<Boolean> serverException = new AtomicReference<>(false);
 
 	@Override
 	public LocalHIPSInstallation loadLocalInstallation() {
@@ -117,7 +116,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 			boolean running = response != null;
 			if(running) {
 				callback.run();
-				eventService.publish(new HIPSServerRunningEvent());
+				eventService.publish(new HIPSServerThreadDoneEvent(true));
 			}
 			return running;
 		} catch (HIPSClient.ServerNotAvailableException | IOException e) {
@@ -145,14 +144,14 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		String condaExecutable = condaService.getCondaExecutable(installation.getCondaPath());
 		String environmentPath = condaService.getEnvironmentPath(installation.getCondaPath());
 		if(new File(condaExecutable).exists()) {
-			serverThread = createServerThread(installation, installation.getCondaPath(), environmentPath);
+			serverThread = new ServerThread(installation, installation.getCondaPath(), environmentPath);
 			serverThread.start();
 			Timer timer = new Timer();
 			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
 					initClient(installation);
-					if(checkIfRunning(installation, callback)) {
+					if(checkIfRunning(installation, callback) || serverException.get()) {
 						timer.cancel();
 					}
 				}
@@ -180,70 +179,6 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		statusService.showStatus("Added catalog " + urlOrPath + " to HIPS collection.");
 		HIPSCollectionUpdatedEvent event = new HIPSCollectionUpdatedEvent(CollectionReader.readCollection(response));
 		eventService.publish(event);
-	}
-
-	private File downloadTmpFile(String url, String name) throws IOException {
-		Path dir = Files.createTempDirectory("hips-installer");
-		File scriptFile = new File(dir.toFile(), name);
-		log().info("Downloading " + url + " to " + scriptFile.getAbsolutePath() + "..");
-		FileUtils.copyURLToFile(new URL(url), scriptFile, 10000, 1000000);
-		return scriptFile;
-	}
-
-	private Thread createServerThread(LocalHIPSInstallation installation, File condaPath, String environmentPath) {
-		return new Thread(() -> {
-			try {
-				tryToStartServer(installation, condaPath, environmentPath);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		});
-	}
-
-	private void tryToStartServer(LocalHIPSInstallation installation, File condaPath, String environmentPath) throws IOException {
-		log.info("Trying to start the HIPS server locally on port " + installation.getPort() + "..");
-		String[] command;
-		String commandInCondaEnv = "run --no-capture-output --prefix " + environmentPath + " "
-				+ new File(environmentPath, "python").getAbsolutePath()
-				+ " -m hips server --port " + installation.getPort();
-		if(SystemUtils.IS_OS_WINDOWS) {
-			command = condaService.createCondaCommandWindows(condaPath, commandInCondaEnv);
-		} else {
-			command = condaService.createCondaCommandLinuxMac(condaPath, commandInCondaEnv);
-		}
-		log().info(Arrays.toString(command));
-		ProcessBuilder builder = new ProcessBuilder(command);
-		Map<String, String> env = builder.environment();
-		env.put("HIPS_DEFAULT_CATALOG", installation.getDefaultCatalog());
-		final AtomicReference<Boolean> portInUse = new AtomicReference<>(false);
-		try {
-			Process process = builder.start();
-			String addressInUseError = "[Errno 98] Address already in use";
-			StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream(), log()) {
-				@Override
-				public void handleLog(String line) {
-					if(line.contains(addressInUseError)) {
-//						process.destroy();
-						portInUse.set(true);
-						this.streamClosed = true;
-					} else {
-						super.handleLog(line);
-					}
-				}
-			};
-			StreamGobbler outputGobbler = new StreamGobbler(process.getInputStream(), log());
-			errorGobbler.start();
-			outputGobbler.start();
-			process.waitFor();
-		} catch (IOException | IllegalStateException | InterruptedException e) {
-			e.printStackTrace();
-		}
-		if(portInUse.get()) {
-			installation.setPort(installation.getPort()+1);
-			log.warn("Port " + (installation.getPort()-1) + " is already in use, "
-					+ " trying port " + installation.getPort() + " next.");
-			tryToStartServer(installation, condaPath, environmentPath);
-		}
 	}
 
 	@Override
@@ -329,4 +264,71 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		context().inject(client);
 	}
 
+	private class ServerThread extends Thread {
+		private final String environmentPath;
+		private final LocalHIPSInstallation installation;
+		private final File condaPath;
+
+		public ServerThread(LocalHIPSInstallation installation, File condaPath, String environmentPath) {
+			this.installation = installation;
+			this.condaPath = condaPath;
+			this.environmentPath = environmentPath;
+		}
+
+		@Override
+		public void run() {
+			try {
+				tryToStartServer(installation, condaPath, environmentPath);
+			} catch (IOException | InterruptedException e) {
+				eventService.publish(new HIPSServerThreadDoneEvent(e));
+			}
+		}
+
+		private void tryToStartServer(LocalHIPSInstallation installation, File condaPath, String environmentPath) throws IOException, InterruptedException {
+			log.info("Trying to start the HIPS server locally on port " + installation.getPort() + "..");
+			String[] command;
+			String commandInCondaEnv = "run --no-capture-output --prefix " + environmentPath + " "
+					+ (SystemUtils.IS_OS_WINDOWS ? new File(environmentPath, "python").getAbsolutePath() + " -m " : "")
+					+ "hips server --port " + installation.getPort();
+			if(SystemUtils.IS_OS_WINDOWS) {
+				command = condaService.createCondaCommandWindows(condaPath, commandInCondaEnv);
+			} else {
+				command = condaService.createCondaCommandLinuxMac(condaPath, commandInCondaEnv);
+			}
+			log().info(Arrays.toString(command));
+			ProcessBuilder builder = new ProcessBuilder(command);
+			Map<String, String> env = builder.environment();
+			env.put("HIPS_DEFAULT_CATALOG", installation.getDefaultCatalog());
+			final AtomicReference<Boolean> portInUse = new AtomicReference<>(false);
+			serverException.set(false);
+			Process process = builder.start();
+			String addressInUseError = "[Errno 98] Address already in use";
+			StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream(), log()) {
+				@Override
+				public void handleLog(String line) {
+					if(line.contains(addressInUseError)) {
+						portInUse.set(true);
+						this.streamClosed = true;
+					} else {
+						try {
+							super.handleLog(line);
+						} catch (RuntimeException e) {
+							serverException.set(true);
+							eventService.publish(new HIPSServerThreadDoneEvent(e));
+						}
+					}
+				}
+			};
+			StreamGobbler outputGobbler = new StreamGobbler(process.getInputStream(), log());
+			errorGobbler.start();
+			outputGobbler.start();
+			process.waitFor();
+			if(portInUse.get()) {
+				installation.setPort(installation.getPort()+1);
+				log.warn("Port " + (installation.getPort()-1) + " is already in use, "
+						+ " trying port " + installation.getPort() + " next.");
+				tryToStartServer(installation, condaPath, environmentPath);
+			}
+		}
+	}
 }

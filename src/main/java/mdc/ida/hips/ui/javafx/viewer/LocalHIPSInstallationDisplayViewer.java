@@ -36,7 +36,7 @@ import javafx.stage.DirectoryChooser;
 import mdc.ida.hips.model.HIPSCatalog;
 import mdc.ida.hips.model.HIPSCollection;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
-import mdc.ida.hips.model.HIPSServerRunningEvent;
+import mdc.ida.hips.model.HIPSServerThreadDoneEvent;
 import mdc.ida.hips.model.LocalHIPSInstallation;
 import mdc.ida.hips.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
 import mdc.ida.hips.service.HIPSServerService;
@@ -119,8 +119,8 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 	}
 
 	@EventHandler
-	private void hipsServerStarted(HIPSServerRunningEvent e) {
-		hipsRunning.set(true);
+	private void hipsServerThreadDone(HIPSServerThreadDoneEvent e) {
+		hipsRunning.set(e.isSuccess());
 	}
 
 	@EventHandler

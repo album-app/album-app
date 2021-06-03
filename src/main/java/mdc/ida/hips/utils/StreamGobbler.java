@@ -38,10 +38,10 @@ public class StreamGobbler extends Thread {
 		}
 	}
 
-	public void handleLog(String line) {
+	public void handleLog(String line) throws RuntimeException {
 		if(line.contains("ERROR") || line.contains("Error")) {
 			failed = true;
-			logger.error(line);
+			throw new RuntimeException(line);
 		} else {
 			if(line.contains("WARNING")) {
 				logger.warn(line);
