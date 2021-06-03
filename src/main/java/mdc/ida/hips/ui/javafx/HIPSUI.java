@@ -41,6 +41,9 @@ public class HIPSUI extends AbstractUserInterface implements JavaFXUI {
 			systemClipboard = new JavaFXClipboard();
 			appFrame = new HIPSApplicationFrame(context(), "HIPS", statusBar);
 			consolePane.setTabPane(appFrame.getTabPane());
+			log().addLogListener(message -> {
+				statusBar.setStatus(message.text());
+			});
 			super.createUI();
 		});
 		Platform.setImplicitExit(true);
