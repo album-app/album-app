@@ -36,7 +36,7 @@ public class HIPS extends AbstractGateway {
 		HIPSOptions.Values options = parseOptions(Arrays.asList(args));
 		super.launch(args);
 		try {
-			HIPSInstallation installation = loadInstallation(options);
+			loadInstallation(options);
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -55,14 +55,28 @@ public class HIPS extends AbstractGateway {
 		}
 	}
 
+	public void initHeadless(String... args) {
+		HIPSOptions.Values options = parseOptions(Arrays.asList(args));
+		ui().setHeadless(true);
+		javaFXService.setHeadless(true);
+		if(options.host().isPresent() && !options.host().get().equals(DEFAULT_HOST_LOCAL)) {
+			hipsService.loadRemoteInstallation(options.host().get(), options.port().get());
+		} else {
+			LocalHIPSInstallation localInstallation = hipsService.loadLocalInstallation();
+			if(options.port().isPresent()) localInstallation.setPort(options.port().get());
+		}
+	}
+
 	private HIPSInstallation loadInstallation(HIPSOptions.Values options) throws IOException, InterruptedException {
 		if(options.host().isPresent() && !options.host().get().equals(DEFAULT_HOST_LOCAL)) {
 			return hipsService.loadRemoteInstallation(options.host().get(), options.port().get());
 		} else {
 			LocalHIPSInstallation localInstallation = hipsService.loadLocalInstallation();
 			if(options.port().isPresent()) localInstallation.setPort(options.port().get());
-			ui().show("Welcome", localInstallation);
-			hipsService.runWithChecks(localInstallation);
+			if(!ui().isHeadless()) {
+				ui().show("Welcome", localInstallation);
+				hipsService.runWithChecks(localInstallation);
+			}
 			return localInstallation;
 		}
 	}

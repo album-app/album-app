@@ -74,14 +74,17 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 
 	private HIPSClient client;
 
-	private static final String HIPS_ENVIRONMENT_URL = "https://gitlab.com/ida-mdc/hips/-/raw/main/hips.yml";
 	private static final String HIPS_PREF_LOCAL_PORT = "hips.local.port";
+	private static final String HIPS_PREF_LOCAL_DEFAULT_CATALOG = "hips.local.default_catalog";
+	private static final String HIPS_DEFAULT_CATALOG_URL = "https://gitlab.com/ida-mdc/capture-knowledge";
+
 	private Thread serverThread;
 
 	@Override
 	public LocalHIPSInstallation loadLocalInstallation() {
 		int port = prefService.getInt(DefaultHIPSServerService.class, HIPS_PREF_LOCAL_PORT, 8080);
-		LocalHIPSInstallation installation = new LocalHIPSInstallation(port);
+		String catalog = prefService.get(DefaultHIPSServerService.class, HIPS_PREF_LOCAL_DEFAULT_CATALOG, HIPS_DEFAULT_CATALOG_URL);
+		LocalHIPSInstallation installation = new LocalHIPSInstallation(port, catalog);
 		File defaultCondaPath = condaService.getDefaultCondaPath();
 		if(defaultCondaPath != null) installation.setCondaPath(defaultCondaPath);
 		return installation;
@@ -202,7 +205,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		String[] command;
 		String commandInCondaEnv = "run --no-capture-output --prefix " + environmentPath + " "
 				+ new File(environmentPath, "python").getAbsolutePath()
-				+ " hips server --port " + installation.getPort();
+				+ " -m hips server --port " + installation.getPort();
 		if(SystemUtils.IS_OS_WINDOWS) {
 			command = condaService.createCondaCommandWindows(condaPath, commandInCondaEnv);
 		} else {

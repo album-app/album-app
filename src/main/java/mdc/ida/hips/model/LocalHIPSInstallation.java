@@ -8,8 +8,9 @@ public class LocalHIPSInstallation implements HIPSInstallation {
 	private File condaPath;
 	private String defaultCatalog;
 
-	public LocalHIPSInstallation(int port) {
+	public LocalHIPSInstallation(int port, String defaultCatalog) {
 		this.port = port;
+		this.defaultCatalog = defaultCatalog;
 	}
 
 	@Override

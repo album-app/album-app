@@ -84,15 +84,13 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 	@Parameter
 	private CondaService condaService;
 
-	private static final String DEFAULT_HIPS_CATALOG_URL = "https://gitlab.com/ida-mdc/capture-knowledge";
-
 	private LocalHIPSInstallation installation;
 	private final BooleanProperty hipsRunning = new SimpleBooleanProperty(false);
 	private final BooleanProperty condaInstalled = new SimpleBooleanProperty(false);
 	private final BooleanProperty condaMissing = new SimpleBooleanProperty(false);
 	private final BooleanProperty initialSetupRunning = new SimpleBooleanProperty(false);
 	private final BooleanProperty hasHipsEnvironment = new SimpleBooleanProperty(false);
-	private final StringProperty hipsCatalog = new SimpleStringProperty(DEFAULT_HIPS_CATALOG_URL);
+	private final StringProperty hipsCatalog = new SimpleStringProperty();
 	private int LABEL_WITH_MIN = 200;
 
 	public LocalHIPSInstallationDisplayViewer() {
@@ -110,6 +108,7 @@ public class LocalHIPSInstallationDisplayViewer extends EasyJavaFXDisplayViewer<
 	@Override
 	protected Node createDisplayPanel(LocalHIPSInstallation installation) {
 		this.installation = installation;
+		hipsCatalog.set(installation.getDefaultCatalog());
 		ImageView image = createScaleImage();
 		double imgWidth = image.getFitWidth();
 		Node welcomeBox = createWelcomeBox(imgWidth);

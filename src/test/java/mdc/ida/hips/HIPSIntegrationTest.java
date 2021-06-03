@@ -34,7 +34,7 @@ public class HIPSIntegrationTest {
 	void setUp() throws Exception {
 		hips = new HIPS(new Context());
 		hips.log().setLevel(LogLevel.INFO);
-		hips.launchHeadless();
+		hips.initHeadless();
 	}
 
 	@AfterEach
@@ -86,7 +86,6 @@ public class HIPSIntegrationTest {
 		assertTrue(collection.size() > 0);
 		HIPSCatalog catalog = collection.get(0);
 		assertNotNull(catalog);
-
 
 		//TODO add HIPS test solution to default catalog
 //		assertTrue(catalog.size() > 0);
