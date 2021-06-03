@@ -161,7 +161,9 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 
 	@Override
 	public File getEnvironmentFile() throws IOException {
-		return downloadTmpFile(HIPS_ENVIRONMENT_URL, "hips.yml");
+		File tmpFile = Files.createTempFile("hips", ".yml").toFile();
+		FileUtils.copyInputStreamToFile(getClass().getResourceAsStream("hips.yml"), tmpFile);
+		return tmpFile;
 	}
 
 	@Override
