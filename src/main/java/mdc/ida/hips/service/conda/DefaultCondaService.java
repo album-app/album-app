@@ -1,10 +1,12 @@
 package mdc.ida.hips.service.conda;
 
+import mdc.ida.hips.model.HIPSServerThreadDoneEvent;
 import mdc.ida.hips.service.DefaultHIPSServerService;
 import mdc.ida.hips.utils.StreamGobbler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.scijava.event.EventService;
+import org.scijava.log.LogService;
 import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -19,6 +21,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Plugin(type = Service.class)
 public class DefaultCondaService extends AbstractService implements CondaService {
@@ -32,6 +36,9 @@ public class DefaultCondaService extends AbstractService implements CondaService
 	@Parameter
 	private EventService eventService;
 
+	@Parameter
+	private LogService log;
+
 	private static final String CONDA_DOWNLOAD_Linux = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh";
 	private static final String CONDA_DOWNLOAD_MacOSX = "https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh";
 	private static final String CONDA_DOWNLOAD_Windows = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe";
@@ -39,16 +46,25 @@ public class DefaultCondaService extends AbstractService implements CondaService
 
 	@Override
 	public boolean checkIfCondaInstalled(File condaPath) {
-		if(condaPath == null || !condaPath.exists()) return false;
+		if(condaPath == null) {
+			eventService.publish(new CondaPathMissingEvent());
+			return false;
+		}
+		if(!condaPath.exists()) {
+			log.warn("Cannot find configured conda path " + condaPath);
+			eventService.publish(new CondaExecutableMissingEvent());
+			return false;
+		}
 		try {
 			String condaExecutable = getCondaExecutable(condaPath);
 			if(!new File(condaExecutable).exists()) {
-				log().warn("Cannot find conda executable " + condaExecutable);
+				log.warn("Cannot find conda executable " + condaExecutable);
+				eventService.publish(new CondaExecutableMissingEvent());
 				return false;
 			}
 			Process p = new ProcessBuilder(condaExecutable, "--version").start();
-			StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(), log());
-			StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(), log());
+			StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(), log);
+			StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(), log);
 			errorGobbler.start();
 			outputGobbler.start();
 			p.waitFor();
@@ -68,7 +84,7 @@ public class DefaultCondaService extends AbstractService implements CondaService
 		if(SystemUtils.IS_OS_LINUX) installCondaLinux(condaPath);
 		else if(SystemUtils.IS_OS_MAC_OSX) installCondaMacOSX(condaPath);
 		else if(SystemUtils.IS_OS_WINDOWS) installCondaWindows(condaPath);
-		else log().error("Cannot install conda for your operating system");
+		else log.error("Cannot install conda for your operating system");
 	}
 
 	@Override
@@ -88,14 +104,22 @@ public class DefaultCondaService extends AbstractService implements CondaService
 		} else {
 			command = createCondaCommandLinuxMac(condaPath, commandInCondaEnv);
 		}
-		log().info("Running " + Arrays.toString(command));
+		log.info("Running " + Arrays.toString(command));
 		Process p = new ProcessBuilder(command)
 				.inheritIO().start();
 		p.waitFor();
 	}
 
 	@Override
-	public String[] createCondaCommandLinuxMac(File condaPath, String commandInCondaEnv) {
+	public String[] createCondaCommand(File condaPath, String commandInCondaEnv) throws IOException {
+		if(SystemUtils.IS_OS_WINDOWS) {
+			return createCondaCommandWindows(condaPath, commandInCondaEnv);
+		} else {
+			return createCondaCommandLinuxMac(condaPath, commandInCondaEnv);
+		}
+	}
+
+	private String[] createCondaCommandLinuxMac(File condaPath, String commandInCondaEnv) {
 		String[] commands = commandInCondaEnv.split(" ");
 		String[] res = new String[commands.length+1];
 		res[0] = getCondaExecutable(condaPath);
@@ -103,8 +127,7 @@ public class DefaultCondaService extends AbstractService implements CondaService
 		return res;
 	}
 
-	@Override
-	public String[] createCondaCommandWindows(File condaPath, String commandInCondaEnv) throws IOException {
+	private String[] createCondaCommandWindows(File condaPath, String commandInCondaEnv) throws IOException {
 		Path file = Files.createTempFile("hips", ".bat");
 		String content =
 				"set root="+condaPath.getAbsolutePath()+"\n" +
@@ -116,6 +139,7 @@ public class DefaultCondaService extends AbstractService implements CondaService
 
 	@Override
 	public void setDefaultCondaPath(File condaPath) {
+		log.info("Saving default conda path: " + condaPath);
 		prefService.put(DefaultHIPSServerService.class, DEFAULT_CONDA_PATH_KEY, condaPath.getAbsolutePath());
 	}
 
@@ -133,8 +157,27 @@ public class DefaultCondaService extends AbstractService implements CondaService
 	}
 
 	@Override
-	public String getEnvironmentPath(File condaPath) {
-		return new File(new File(condaPath, "envs"), "hips").getAbsolutePath();
+	public String getEnvironmentPath(File condaPath, String environmentName) {
+		return new File(new File(condaPath, "envs"), environmentName).getAbsolutePath();
+	}
+
+	@Override
+	public File getDefaultCondaDownloadTarget() {
+		return new File(System.getProperty("user.home"), "miniconda");
+	}
+
+	@Override
+	public void removeEnvironment(File condaPath, String environmentName) throws IOException, InterruptedException {
+		String[] command = createCondaCommand(condaPath, "remove -n " + environmentName + " --all");
+		log().info(Arrays.toString(command));
+		ProcessBuilder builder = new ProcessBuilder(command);
+		Map<String, String> env = builder.environment();
+		Process process = builder.start();
+		StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream(), log());
+		StreamGobbler outputGobbler = new StreamGobbler(process.getInputStream(), log());
+		errorGobbler.start();
+		outputGobbler.start();
+		process.waitFor();
 	}
 
 	private void installCondaLinux(File target) throws IOException {
@@ -148,14 +191,14 @@ public class DefaultCondaService extends AbstractService implements CondaService
 	private void installConda(File target, String url) throws IOException {
 		File scriptFile = downloadTmpFile(url, "miniconda.sh");
 		String minicondaPath = target.getAbsolutePath();
-		log().info("Installing miniconda to " + minicondaPath + "..");
+		log.info("Installing miniconda to " + minicondaPath + "..");
 		platformService.exec("bash", scriptFile.getAbsolutePath(), "-b", "-f", "-p", minicondaPath);
 	}
 
 	private void installCondaWindows(File target) throws IOException {
 		File scriptFile = downloadTmpFile(CONDA_DOWNLOAD_Windows, "conda.exe");
 		String minicondaPath = target.getAbsolutePath();
-		log().info("Installing miniconda to " + minicondaPath + "..");
+		log.info("Installing miniconda to " + minicondaPath + "..");
 		platformService.exec(scriptFile.getAbsolutePath(), "/AddToPath=0", "/InstallationType=JustMe",
 				"/RegisterPython=0", "/S", "/D=" + minicondaPath);
 	}
@@ -163,7 +206,7 @@ public class DefaultCondaService extends AbstractService implements CondaService
 	private File downloadTmpFile(String url, String name) throws IOException {
 		Path dir = Files.createTempDirectory("hips-installer");
 		File scriptFile = new File(dir.toFile(), name);
-		log().info("Downloading " + url + " to " + scriptFile.getAbsolutePath() + "..");
+		log.info("Downloading " + url + " to " + scriptFile.getAbsolutePath() + "..");
 		FileUtils.copyURLToFile(new URL(url), scriptFile, 10000, 1000000);
 		return scriptFile;
 	}

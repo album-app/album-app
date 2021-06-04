@@ -70,8 +70,9 @@ public class HIPSCatalogDisplayViewer extends EasyJavaFXDisplayViewer<HIPSCatalo
 		tableView.getColumns().add(makeColumn("Version", "version"));
 		tableView.getColumns().add(makeColumn("Description", "description"));
 		addButton(tableView, 0, "About", hips -> uiService.show(hips.getName(), hips));
-		addButton(tableView, 0, "Tutorial", hips -> eventService.publish(new HIPSLaunchRequestEvent(hips, true)));
-		addButton(tableView, 0, "Run", hips -> eventService.publish(new HIPSLaunchRequestEvent(hips, false)));
+		addButton(tableView, 0, "Tutorial",
+				hips -> eventService.publish(new HIPSLaunchRequestEvent(collection.getParent(), hips, true)));
+		addButton(tableView, 0, "Run", hips -> eventService.publish(new HIPSLaunchRequestEvent(collection.getParent(), hips, false)));
 		collection.forEach(hipSolution -> tableView.getItems().add(hipSolution));
 		tableView.setBorder(Border.EMPTY);
 		tableView.setBackground(Background.EMPTY);

@@ -31,14 +31,14 @@ public class HIPSIntegrationTest {
 	private CompletableFuture<HIPSServerThreadDoneEvent> futureHipsServerThread;
 
 	@BeforeEach
-	void setUp() throws Exception {
+	void setUp() {
 		hips = new HIPS(new Context());
 		hips.log().setLevel(LogLevel.INFO);
-		hips.initHeadless();
+		hips.setHeadless();
 	}
 
 	@AfterEach
-	void tearDown() throws Exception {
+	void tearDown() {
 		hips.dispose();
 	}
 
@@ -47,10 +47,18 @@ public class HIPSIntegrationTest {
 		File path = new File(folder, "miniconda");
 		path.mkdirs();
 
+		hips.conda().setDefaultCondaPath(path);
+
+		LocalHIPSInstallation installation = hips.server().loadLocalInstallation();
+		assertNotNull(installation);
+		assertEquals(path, installation.getCondaPath());
+
 		// test installing conda
-		assertFalse(hips.conda().checkIfCondaInstalled(path));
-		hips.conda().installConda(path);
-		assertTrue(hips.conda().checkIfCondaInstalled(path));
+		assertFalse(hips.server().checkIfCondaInstalled(installation));
+		assertFalse(installation.isCondaInstalled());
+		hips.server().installConda(installation);
+		assertTrue(hips.server().checkIfCondaInstalled(installation));
+		assertTrue(installation.isCondaInstalled());
 
 		// create environment
 //		File envFile = folder.newFile("test.yml");
@@ -60,18 +68,14 @@ public class HIPSIntegrationTest {
 //				"  - defaults\n" +
 //				"dependencies:\n" +
 //				"  - python=3.6\n", Charset.defaultCharset());
-		assertFalse(hips.conda().checkIfEnvironmentExists(path, "hips"));
-//		hips.conda().createEnvironment(path, envFile);
-		hips.conda().createEnvironment(path, hips.server().getEnvironmentFile());
-		assertTrue(hips.conda().checkIfEnvironmentExists(path, "hips"));
+//		assertFalse(hips.conda().checkIfEnvironmentExists(path, "hips"));
+		assertFalse(hips.server().checkIfHIPSEnvironmentExists(installation));
+		assertFalse(installation.isHasHipsEnvironment());
+		hips.server().createHIPSEnvironment(installation);
+		assertTrue(hips.server().checkIfHIPSEnvironmentExists(installation));
+		assertTrue(installation.isHasHipsEnvironment());
 
-		hips.conda().setDefaultCondaPath(path);
-
-		LocalHIPSInstallation installation = hips.server().loadLocalInstallation();
-		assertNotNull(installation);
-
-		assertEquals(path, installation.getCondaPath());
-
+		assertFalse(installation.isServerRunning());
 		futureHipsServerThread = new CompletableFuture<>();
 		hips.event().subscribe(this);
 		hips.server().runAsynchronously(installation);
@@ -79,9 +83,10 @@ public class HIPSIntegrationTest {
 
 		assertTrue(serverThreadDone.isSuccess());
 		assertTrue(hips.server().checkIfRunning(installation));
+		assertTrue(installation.isServerRunning());
 
 		CompletableFuture<HIPSCollection> futureCollectionReturned = new CompletableFuture<>();
-		hips.server().updateIndex(e -> futureCollectionReturned.complete(e.getCollection()));
+		hips.server().updateIndex(installation, e -> futureCollectionReturned.complete(e.getCollection()));
 		HIPSCollection collection = futureCollectionReturned.get();
 		assertNotNull(collection);
 		assertTrue(collection.size() > 0);

@@ -10,13 +10,15 @@ public interface CondaService extends SciJavaService {
 	void installConda(File condaPath) throws IOException;
 	boolean checkIfEnvironmentExists(File condaPath, String environmentName);
 
-	String[] createCondaCommandLinuxMac(File condaPath, String commandInCondaEnv);
-
-	String[] createCondaCommandWindows(File condaPath, String commandInCondaEnv) throws IOException;
+	String[] createCondaCommand(File condaPath, String commandInCondaEnv) throws IOException;
 
 	void setDefaultCondaPath(File condaPath);
 	File getDefaultCondaPath();
 	void createEnvironment(File condaPath, File environmentYamlFile) throws IOException, InterruptedException;
 	String getCondaExecutable(File condaPath);
-	String getEnvironmentPath(File condaPath);
+	String getEnvironmentPath(File condaPath, String environmentName);
+
+	File getDefaultCondaDownloadTarget();
+
+	void removeEnvironment(File condaPath, String environmentName) throws IOException, InterruptedException;
 }

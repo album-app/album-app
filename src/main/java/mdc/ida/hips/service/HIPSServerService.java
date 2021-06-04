@@ -1,9 +1,11 @@
 package mdc.ida.hips.service;
 
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
+import mdc.ida.hips.model.HIPSInstallation;
 import mdc.ida.hips.model.HIPSolution;
 import mdc.ida.hips.model.LocalHIPSInstallation;
 import mdc.ida.hips.model.RemoteHIPSInstallation;
+import mdc.ida.hips.model.ServerProperties;
 import org.scijava.service.SciJavaService;
 
 import java.io.File;
@@ -17,15 +19,28 @@ public interface HIPSServerService extends SciJavaService {
 		return checkIfRunning(installation, () -> {});
 	}
 	boolean checkIfRunning(LocalHIPSInstallation installation, Runnable callbackIfRunning);
-	void launchSolution(HIPSolution solution);
-	void launchSolutionAsTutorial(HIPSolution solution);
-	void updateIndex(Consumer<HIPSCollectionUpdatedEvent> callback) throws IOException;
+	void launchSolution(HIPSInstallation installation, HIPSolution solution);
+	void launchSolutionAsTutorial(HIPSInstallation installation, HIPSolution solution);
+	void updateIndex(LocalHIPSInstallation installation, Consumer<HIPSCollectionUpdatedEvent> callback) throws IOException;
 	boolean checkIfHIPSEnvironmentExists(LocalHIPSInstallation installation);
 	default void runAsynchronously(LocalHIPSInstallation installation) {
 		runAsynchronously(installation, () -> {});
 	}
 	void runAsynchronously(LocalHIPSInstallation installation, Runnable callback);
-	void runWithChecks(LocalHIPSInstallation installation) throws IOException, InterruptedException;
+	void runWithChecks(LocalHIPSInstallation installation);
 	File getEnvironmentFile() throws IOException;
 	void addCatalog(LocalHIPSInstallation installation, String urlOrPath) throws IOException;
+	boolean checkIfCondaInstalled(LocalHIPSInstallation installation);
+
+	void installConda(LocalHIPSInstallation installation) throws IOException;
+
+	void createHIPSEnvironment(LocalHIPSInstallation installation) throws IOException, InterruptedException;
+
+	ServerProperties getServerProperties(LocalHIPSInstallation installation) throws IOException;
+
+	String getHIPSEnvironmentPath(LocalHIPSInstallation installation);
+
+	void shutdownServer(HIPSInstallation installation);
+
+	void removeHIPSEnvironment(LocalHIPSInstallation installation) throws IOException, InterruptedException;
 }

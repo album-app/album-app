@@ -3,6 +3,7 @@ package mdc.ida.hips.io;
 import com.fasterxml.jackson.databind.JsonNode;
 import mdc.ida.hips.model.HIPSCatalog;
 import mdc.ida.hips.model.HIPSCollection;
+import mdc.ida.hips.model.HIPSInstallation;
 import mdc.ida.hips.model.HIPSolution;
 import mdc.ida.hips.model.SolutionArgument;
 
@@ -14,19 +15,19 @@ import java.util.function.Consumer;
 
 public class CollectionReader {
 
-	public static HIPSCollection readCollection(JsonNode jsonNode) {
+	public static HIPSCollection readCollection(HIPSInstallation installation, JsonNode jsonNode) {
 		HIPSCollection collection = new HIPSCollection();
 		Iterator<Map.Entry<String, JsonNode>> catalogs = jsonNode.fields();
 		while (catalogs.hasNext()) {
 			Map.Entry<String, JsonNode> catalogNode = catalogs.next();
-			HIPSCatalog catalog = readCatalog(catalogNode.getKey(), catalogNode.getValue());
+			HIPSCatalog catalog = readCatalog(installation, catalogNode.getKey(), catalogNode.getValue());
 			collection.add(catalog);
 		}
 		return collection;
 	}
 
-	private static HIPSCatalog readCatalog(String name, JsonNode jsonNode) {
-		HIPSCatalog catalog = new HIPSCatalog();
+	private static HIPSCatalog readCatalog(HIPSInstallation installation, String name, JsonNode jsonNode) {
+		HIPSCatalog catalog = new HIPSCatalog(installation);
 		catalog.setName(name);
 		for (JsonNode solutionNode : jsonNode) {
 			HIPSolution solution = readHIPSolution(solutionNode);

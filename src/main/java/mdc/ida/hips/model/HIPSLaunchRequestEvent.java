@@ -5,10 +5,12 @@ import org.scijava.event.SciJavaEvent;
 public class HIPSLaunchRequestEvent extends SciJavaEvent {
 	private final HIPSolution solution;
 	private final boolean tutorial;
+	private final HIPSInstallation installation;
 
-	public HIPSLaunchRequestEvent(HIPSolution solution, boolean tutorial) {
+	public HIPSLaunchRequestEvent(HIPSInstallation installation, HIPSolution solution, boolean tutorial) {
 		this.solution = solution;
 		this.tutorial = tutorial;
+		this.installation = installation;
 	}
 
 	public HIPSolution getSolution() {
@@ -17,5 +19,9 @@ public class HIPSLaunchRequestEvent extends SciJavaEvent {
 
 	public boolean launchAsTutorial() {
 		return tutorial;
+	}
+
+	public HIPSInstallation getInstallation() {
+		return installation;
 	}
 }

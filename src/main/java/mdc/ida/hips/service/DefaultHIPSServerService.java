@@ -12,8 +12,9 @@ import mdc.ida.hips.model.HIPSServerThreadDoneEvent;
 import mdc.ida.hips.model.HIPSolution;
 import mdc.ida.hips.model.LocalHIPSInstallation;
 import mdc.ida.hips.model.RemoteHIPSInstallation;
+import mdc.ida.hips.model.ServerProperties;
 import mdc.ida.hips.model.SolutionArgument;
-import mdc.ida.hips.service.conda.CondaEnvironmentMissingEvent;
+import mdc.ida.hips.service.conda.CondaExecutableMissingEvent;
 import mdc.ida.hips.service.conda.CondaService;
 import mdc.ida.hips.utils.StreamGobbler;
 import org.apache.commons.io.FileUtils;
@@ -39,6 +40,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -70,7 +73,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	@Parameter
 	private CondaService condaService;
 
-	private HIPSClient client;
+	private final Map<HIPSInstallation, HIPSClient> clients = new HashMap<>();
 
 	private static final String HIPS_PREF_LOCAL_PORT = "hips.local.port";
 	private static final String HIPS_PREF_LOCAL_DEFAULT_CATALOG = "hips.local.default_catalog";
@@ -78,14 +81,20 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 
 	private Thread serverThread;
 	final AtomicReference<Boolean> serverException = new AtomicReference<>(false);
+	private static final String environmentName = "hips";
 
 	@Override
 	public LocalHIPSInstallation loadLocalInstallation() {
 		int port = prefService.getInt(DefaultHIPSServerService.class, HIPS_PREF_LOCAL_PORT, 8080);
 		String catalog = prefService.get(DefaultHIPSServerService.class, HIPS_PREF_LOCAL_DEFAULT_CATALOG, HIPS_DEFAULT_CATALOG_URL);
+		log.info("Local HIPS installation: default port: " + port);
+		log.info("Local HIPS installation: default catalog URL: " + catalog);
 		LocalHIPSInstallation installation = new LocalHIPSInstallation(port, catalog);
 		File defaultCondaPath = condaService.getDefaultCondaPath();
 		if(defaultCondaPath != null) installation.setCondaPath(defaultCondaPath);
+		else {
+			log.info("No conda path associated with this installation, please run the initial setup in the UI.");
+		}
 		return installation;
 	}
 
@@ -95,20 +104,30 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	}
 
 	@Override
-	public void updateIndex(Consumer<HIPSCollectionUpdatedEvent> callback) throws IOException {
+	public void updateIndex(LocalHIPSInstallation installation, Consumer<HIPSCollectionUpdatedEvent> callback) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "index";
+		HIPSClient client = getClient(installation);
 		JsonNode response = client.send(client.createHIPSRequest(mapper, actionName));
 		if(response == null) return;
 		statusService.showStatus("Updated HIPS collection.");
-		HIPSCollectionUpdatedEvent event = new HIPSCollectionUpdatedEvent(CollectionReader.readCollection(response));
+		HIPSCollectionUpdatedEvent event = new HIPSCollectionUpdatedEvent(CollectionReader.readCollection(installation, response));
 		callback.accept(event);
 		eventService.publish(event);
 	}
 
+	private HIPSClient getClient(HIPSInstallation installation) {
+//		return clients.getOrDefault(installation, new HIPSClient(installation.getHost(), installation.getPort()));
+		return clients.get(installation);
+	}
+
 	@Override
 	public boolean checkIfRunning(LocalHIPSInstallation installation, Runnable callback) {
-		if(client == null) return false;
+		HIPSClient client = getClient(installation);
+		if(client == null) {
+			installation.setServerRunning(false);
+			return false;
+		}
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "";
 		try {
@@ -118,31 +137,33 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 				callback.run();
 				eventService.publish(new HIPSServerThreadDoneEvent(true));
 			}
+			installation.setServerRunning(true);
 			return running;
 		} catch (HIPSClient.ServerNotAvailableException | IOException e) {
+			installation.setServerRunning(false);
 			return false;
 		}
 	}
 
 	@Override
-	public void runWithChecks(LocalHIPSInstallation installation) throws IOException, InterruptedException {
-		if(condaService.checkIfCondaInstalled(installation.getCondaPath())
+	public void runWithChecks(LocalHIPSInstallation installation) {
+		if(checkIfCondaInstalled(installation)
 				&& checkIfHIPSEnvironmentExists(installation)) {
 			runAsynchronously(installation);
-		} else {
-			eventService.publish(new CondaEnvironmentMissingEvent());
 		}
 	}
 
 	@Override
 	public boolean checkIfHIPSEnvironmentExists(LocalHIPSInstallation installation) {
-		return condaService.checkIfEnvironmentExists(installation.getCondaPath(), HIPS_ENVIRONMENT_NAME);
+		boolean exists = condaService.checkIfEnvironmentExists(installation.getCondaPath(), HIPS_ENVIRONMENT_NAME);
+		installation.setHasHipsEnvironment(exists);
+		return exists;
 	}
 
 	@Override
 	public void runAsynchronously(LocalHIPSInstallation installation, Runnable callback) {
 		String condaExecutable = condaService.getCondaExecutable(installation.getCondaPath());
-		String environmentPath = condaService.getEnvironmentPath(installation.getCondaPath());
+		String environmentPath = condaService.getEnvironmentPath(installation.getCondaPath(), environmentName);
 		if(new File(condaExecutable).exists()) {
 			serverThread = new ServerThread(installation, installation.getCondaPath(), environmentPath);
 			serverThread.start();
@@ -157,7 +178,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 				}
 			}, 0, 1000);
 		} else {
-			eventService.publish(new CondaEnvironmentMissingEvent());
+			eventService.publish(new CondaExecutableMissingEvent());
 		}
 	}
 
@@ -174,45 +195,104 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		String actionName = "catalogs/add";
 		ObjectNode solutionArgs = mapper.createObjectNode();
 		solutionArgs.put("url", urlOrPath);
+		HIPSClient client = getClient(installation);
 		JsonNode response = client.send(client.createHIPSRequest(mapper, actionName));
 		if(response == null) return;
 		statusService.showStatus("Added catalog " + urlOrPath + " to HIPS collection.");
-		HIPSCollectionUpdatedEvent event = new HIPSCollectionUpdatedEvent(CollectionReader.readCollection(response));
+		HIPSCollectionUpdatedEvent event = new HIPSCollectionUpdatedEvent(CollectionReader.readCollection(installation, response));
 		eventService.publish(event);
 	}
 
 	@Override
-	public void launchSolutionAsTutorial(HIPSolution solution) {
-		launch(solution, true);
+	public boolean checkIfCondaInstalled(LocalHIPSInstallation installation) {
+		File condaPath = installation.getCondaPath();
+		logService.info("Checking for conda installation: " + condaPath);
+		boolean installed = condaService.checkIfCondaInstalled(condaPath);
+		if(installed) logService.info("Conda installed to " + condaPath);
+		installation.setCondaInstalled(installed);
+		return installed;
 	}
 
 	@Override
-	public void launchSolution(HIPSolution solution) {
-		launch(solution, false);
+	public void installConda(LocalHIPSInstallation installation) throws IOException {
+		condaService.installConda(installation.getCondaPath());
+	}
+
+	@Override
+	public void createHIPSEnvironment(LocalHIPSInstallation installation) throws IOException, InterruptedException {
+		condaService.createEnvironment(installation.getCondaPath(), getEnvironmentFile());
+	}
+
+	@Override
+	public ServerProperties getServerProperties(LocalHIPSInstallation installation) throws IOException {
+		HIPSClient client = getClient(installation);
+		if(client == null) return null;
+		if(!installation.isServerRunning()) return null;
+		ObjectMapper mapper = new ObjectMapper();
+		String actionName = "config";
+		JsonNode response = client.send(client.createHIPSRequest(mapper, actionName));
+		if(response == null) return null;
+		ServerProperties properties = new ServerProperties();
+		Iterator<Map.Entry<String, JsonNode>> props = response.fields();
+		while (props.hasNext()) {
+			Map.Entry<String, JsonNode> prop = props.next();
+			properties.put(prop.getKey(), prop.getValue().asText());
+		}
+		return properties;
+	}
+
+	@Override
+	public String getHIPSEnvironmentPath(LocalHIPSInstallation installation) {
+		return condaService.getEnvironmentPath(installation.getCondaPath(), environmentName);
+	}
+
+	@Override
+	public void launchSolutionAsTutorial(HIPSInstallation installation, HIPSolution solution) {
+		launch(installation, solution, true);
+	}
+
+	@Override
+	public void launchSolution(HIPSInstallation installation, HIPSolution solution) {
+		launch(installation, solution, false);
 	}
 
 	@EventHandler
 	private void launchSolution(HIPSLaunchRequestEvent event) {
 		new Thread(() -> {
 			if(event.launchAsTutorial()) {
-				launchSolutionAsTutorial(event.getSolution());
+				launchSolutionAsTutorial(event.getInstallation(), event.getSolution());
 			} else {
-				launchSolution(event.getSolution());
+				launchSolution(event.getInstallation(), event.getSolution());
 			}
 		}).start();
 	}
 
 	@Override
 	public void dispose() {
-		if(client != null) {
-			client.dispose();
-		}
+		clients.forEach((hipsInstallation, hipsClient) -> {
+			shutdownServer(hipsInstallation);
+		});
 		if(serverThread != null && serverThread.isAlive()) {
 			serverThread.stop();
 		}
 	}
 
-	private void launch(HIPSolution solution, boolean asTutorial) {
+	@Override
+	public void shutdownServer(HIPSInstallation installation) {
+		if(!installation.canBeLaunched()) return;
+		HIPSClient client = getClient(installation);
+		if(client != null) {
+			client.dispose();
+		}
+	}
+
+	@Override
+	public void removeHIPSEnvironment(LocalHIPSInstallation installation) throws IOException, InterruptedException {
+		condaService.removeEnvironment(installation.getCondaPath(), environmentName);
+		FileUtils.deleteDirectory(new File(getHIPSEnvironmentPath(installation)));
+	}
+
+	private void launch(HIPSInstallation installation, HIPSolution solution, boolean asTutorial) {
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = asTutorial? "tutorial" : "run";
 		String path = solution.getCatalog() + "/" + solution.getGroup() + "/" + solution.getName() + "/" + solution.getVersion() + "/" + actionName;
@@ -232,6 +312,7 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		}
 		System.out.println("launching " + solution.getGroup() + ":" + solution.getName() + ":" + solution.getVersion() + "...");
 		try {
+			HIPSClient client = getClient(installation);
 			JsonNode response = client.send(client.createHIPSRequest(mapper, path, solutionArgs));
 			//TODO handle response if there is one
 		} catch (IOException e) {
@@ -260,7 +341,8 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	}
 
 	private void initClient(HIPSInstallation installation) {
-		this.client = new HIPSClient(installation.getHost(), installation.getPort());
+		HIPSClient client = new HIPSClient(installation.getHost(), installation.getPort());
+		clients.put(installation, client);
 		context().inject(client);
 	}
 
@@ -285,17 +367,15 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		}
 
 		private void tryToStartServer(LocalHIPSInstallation installation, File condaPath, String environmentPath) throws IOException, InterruptedException {
+
 			log.info("Trying to start the HIPS server locally on port " + installation.getPort() + "..");
 			String[] command;
 			String commandInCondaEnv = "run --no-capture-output --prefix " + environmentPath + " "
 					+ (SystemUtils.IS_OS_WINDOWS ? new File(environmentPath, "python").getAbsolutePath() + " -m " : "")
 					+ "hips server --port " + installation.getPort();
-			if(SystemUtils.IS_OS_WINDOWS) {
-				command = condaService.createCondaCommandWindows(condaPath, commandInCondaEnv);
-			} else {
-				command = condaService.createCondaCommandLinuxMac(condaPath, commandInCondaEnv);
-			}
+			command = condaService.createCondaCommand(condaPath, commandInCondaEnv);
 			log().info(Arrays.toString(command));
+
 			ProcessBuilder builder = new ProcessBuilder(command);
 			Map<String, String> env = builder.environment();
 			env.put("HIPS_DEFAULT_CATALOG", installation.getDefaultCatalog());

@@ -8,6 +8,11 @@ public class LocalHIPSInstallation implements HIPSInstallation {
 	private File condaPath;
 	private String defaultCatalog;
 
+	private boolean serverRunning;
+	private boolean condaInstalled; // conda executable exists
+	private boolean condaMissing; // conda
+	private boolean hasHipsEnvironment;
+
 	public LocalHIPSInstallation(int port, String defaultCatalog) {
 		this.port = port;
 		this.defaultCatalog = defaultCatalog;
@@ -51,5 +56,37 @@ public class LocalHIPSInstallation implements HIPSInstallation {
 
 	public void setDefaultCatalog(String defaultCatalog) {
 		this.defaultCatalog = defaultCatalog;
+	}
+
+	public boolean isServerRunning() {
+		return serverRunning;
+	}
+
+	public void setServerRunning(boolean serverRunning) {
+		this.serverRunning = serverRunning;
+	}
+
+	public boolean isCondaInstalled() {
+		return condaInstalled;
+	}
+
+	public void setCondaInstalled(boolean condaInstalled) {
+		this.condaInstalled = condaInstalled;
+	}
+
+	public boolean isCondaMissing() {
+		return condaMissing;
+	}
+
+	public void setCondaMissing(boolean condaMissing) {
+		this.condaMissing = condaMissing;
+	}
+
+	public boolean isHasHipsEnvironment() {
+		return hasHipsEnvironment;
+	}
+
+	public void setHasHipsEnvironment(boolean hasHipsEnvironment) {
+		this.hasHipsEnvironment = hasHipsEnvironment;
 	}
 }

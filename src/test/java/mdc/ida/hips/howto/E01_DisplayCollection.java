@@ -6,6 +6,7 @@ import mdc.ida.hips.HIPS;
 import mdc.ida.hips.model.HIPSCatalog;
 import mdc.ida.hips.model.HIPSCollection;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
+import mdc.ida.hips.model.LocalHIPSInstallation;
 
 import java.io.IOException;
 
@@ -20,9 +21,10 @@ public class E01_DisplayCollection extends AbstractHowto {
 		// launch HIPS launcher
 		hips = new HIPS();
 		hips.launch("--port", String.valueOf(port));
+		LocalHIPSInstallation installation = hips.loadLocalInstallation();
 
 		// ask for updated collection index
-		hips.server().updateIndex(this::collectionUpdated);
+		hips.server().updateIndex(installation, this::collectionUpdated);
 	}
 
 	public void collectionUpdated(HIPSCollectionUpdatedEvent event) {

@@ -3,6 +3,7 @@ package mdc.ida.hips;
 import mdc.ida.hips.app.HIPSApp;
 import mdc.ida.hips.model.HIPSInstallation;
 import mdc.ida.hips.model.LocalHIPSInstallation;
+import mdc.ida.hips.model.RemoteHIPSInstallation;
 import mdc.ida.hips.scijava.ui.javafx.JavaFXService;
 import mdc.ida.hips.service.HIPSServerService;
 import mdc.ida.hips.service.conda.CondaService;
@@ -13,7 +14,6 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.SciJavaService;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,55 +29,47 @@ public class HIPS extends AbstractGateway {
 	@Parameter
 	private JavaFXService javaFXService;
 
-	private final String DEFAULT_HOST_LOCAL = "localhost";
+	private final String DEFAULT_HOST_LOCAL = "http://127.0.0.1";
 
 	@Override
 	public void launch(String... args) {
-		HIPSOptions.Values options = parseOptions(Arrays.asList(args));
 		super.launch(args);
-		try {
-			loadInstallation(options);
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public void launchHeadless(String... args) {
-		HIPSOptions.Values options = parseOptions(Arrays.asList(args));
-		ui().setHeadless(true);
-		javaFXService.setHeadless(true);
+		// TODO catch args in launch and use this method if headless arg is provided
+		setHeadless();
 		super.launch(args);
-		try {
-			HIPSInstallation installation = loadInstallation(options);
-			ui().show("Welcome", installation);
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
-	public void initHeadless(String... args) {
-		HIPSOptions.Values options = parseOptions(Arrays.asList(args));
+	public void setHeadless() {
 		ui().setHeadless(true);
 		javaFXService.setHeadless(true);
-		if(options.host().isPresent() && !options.host().get().equals(DEFAULT_HOST_LOCAL)) {
-			hipsService.loadRemoteInstallation(options.host().get(), options.port().get());
-		} else {
-			LocalHIPSInstallation localInstallation = hipsService.loadLocalInstallation();
-			if(options.port().isPresent()) localInstallation.setPort(options.port().get());
-		}
 	}
 
-	private HIPSInstallation loadInstallation(HIPSOptions.Values options) throws IOException, InterruptedException {
+	public LocalHIPSInstallation loadLocalInstallation(String...args) {
+		HIPSOptions.Values options = parseOptions(Arrays.asList(args));
+		return loadLocalInstallation(options);
+	}
+
+	public LocalHIPSInstallation loadLocalInstallation(HIPSOptions.Values options) {
+		log().info("Loading local HIPS installation..");
+		LocalHIPSInstallation localInstallation = hipsService.loadLocalInstallation();
+		if(options.port().isPresent()) localInstallation.setPort(options.port().get());
+		if(!ui().isHeadless()) {
+			ui().show("Welcome", localInstallation);
+		}
+		hipsService.runWithChecks(localInstallation);
+		return localInstallation;
+	}
+
+	public RemoteHIPSInstallation loadRemoteInstallation(HIPSOptions.Values options) {
 		if(options.host().isPresent() && !options.host().get().equals(DEFAULT_HOST_LOCAL)) {
+			log().info("Loading remote HIPS installation from " + options.host() + ":" + options.port() + "..");
 			return hipsService.loadRemoteInstallation(options.host().get(), options.port().get());
 		} else {
-			LocalHIPSInstallation localInstallation = hipsService.loadLocalInstallation();
-			if(options.port().isPresent()) localInstallation.setPort(options.port().get());
-			if(!ui().isHeadless()) {
-				ui().show("Welcome", localInstallation);
-				hipsService.runWithChecks(localInstallation);
-			}
-			return localInstallation;
+			log().error("Cannot load remote installation");
+			return null;
 		}
 	}
 
@@ -126,5 +118,6 @@ public class HIPS extends AbstractGateway {
 	public static void main(final String... args) {
 		final HIPS hips = new HIPS();
 		hips.launch(args);
+		hips.loadLocalInstallation(args);
 	}
 }
