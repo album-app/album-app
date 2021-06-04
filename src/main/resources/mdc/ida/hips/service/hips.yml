@@ -7,4 +7,4 @@ dependencies:
   - pip
   - git
   - pip:
-      - git+https://gitlab.com/ida-mdc/hips.git@improve-default-system-dirs
+      - git+https://gitlab.com/ida-mdc/hips.git@e08d6a2bcb022b663b0d161f017970d4f8401d6f
