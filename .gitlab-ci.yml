@@ -27,8 +27,8 @@ windows_job:
     - '$env:JAVA_HOME="C:\JDK11\jdk-11.0.11+9"'
     - 'if(-Not (Test-Path .\download\gradle-6.8.3-bin.zip)) {Invoke-WebRequest -UseBasicParsing -Uri "https://services.gradle.org/distributions/gradle-6.8.3-bin.zip" -OutFile .\download\gradle-6.8.3-bin.zip}'
     - 'if(-Not (Test-Path .\Gradle)) {Expand-Archive -Path ".\download\gradle-6.8.3-bin.zip" -DestinationPath ".\Gradle"}'
-    - 'cmd /c .\Gradle\gradle-6.8.3\bin\gradle clean test'
-    - 'exit /b %errorlevel%'
+#    - 'cmd /c .\Gradle\gradle-6.8.3\bin\gradle clean test'
+#    - 'exit /b %errorlevel%'
 
 macos_job:
   image: gradle:6.5-jdk11
