@@ -21,4 +21,6 @@ public interface CondaService extends SciJavaService {
 	File getDefaultCondaDownloadTarget();
 
 	void removeEnvironment(File condaPath, String environmentName) throws IOException, InterruptedException;
+
+	void removeDefaultCondaPath();
 }

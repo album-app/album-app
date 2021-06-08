@@ -144,6 +144,12 @@ public class DefaultCondaService extends AbstractService implements CondaService
 	}
 
 	@Override
+	public void removeDefaultCondaPath() {
+		log.info("Removing default conda path..");
+		prefService.remove(DefaultHIPSServerService.class, DEFAULT_CONDA_PATH_KEY);
+	}
+
+	@Override
 	public File getDefaultCondaPath() {
 		String path = prefService.get(DefaultHIPSServerService.class, DEFAULT_CONDA_PATH_KEY, null);
 		if(path == null) return null;

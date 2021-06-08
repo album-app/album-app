@@ -240,4 +240,8 @@ public class InstallationState {
 	public void removeEnvironment() throws IOException, InterruptedException {
 		hipsService.removeHIPSEnvironment(installation);
 	}
+
+	public void resetCondaPath() {
+		condaService.removeDefaultCondaPath();
+	}
 }

@@ -144,7 +144,7 @@ public class InstallationConfigurationWindow extends Stage {
 	}
 
 	private void resetCondaPath() {
-		//TODO
+		installationState.resetCondaPath();
 	}
 
 	private Node createHIPSEnvironmentStatus() {
