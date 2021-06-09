@@ -28,7 +28,7 @@ public class E03_RunSolution extends AbstractHowto {
 			// once the collection is updated, find and run one solution
 			HIPSCatalog catalog = event.getCollection().get(0);
 			Optional<HIPSolution> imageJDisplay = catalog.stream().filter(solution -> solution.getName().equals("imagej-display")).findFirst();
-			imageJDisplay.ifPresent(solution -> hips.server().launchSolution(installation, solution));
+			imageJDisplay.ifPresent(solution -> hips.server().launchSolution(installation, solution, "run"));
 		});
 	}
 

@@ -19,8 +19,7 @@ public interface HIPSServerService extends SciJavaService {
 		return checkIfRunning(installation, () -> {});
 	}
 	boolean checkIfRunning(LocalHIPSInstallation installation, Runnable callbackIfRunning);
-	void launchSolution(HIPSInstallation installation, HIPSolution solution);
-	void launchSolutionAsTutorial(HIPSInstallation installation, HIPSolution solution);
+	void launchSolution(HIPSInstallation installation, HIPSolution solution, String action);
 	void updateIndex(LocalHIPSInstallation installation, Consumer<HIPSCollectionUpdatedEvent> callback) throws IOException;
 	boolean checkIfHIPSEnvironmentExists(LocalHIPSInstallation installation);
 	default void runAsynchronously(LocalHIPSInstallation installation) {

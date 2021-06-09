@@ -247,23 +247,14 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 	}
 
 	@Override
-	public void launchSolutionAsTutorial(HIPSInstallation installation, HIPSolution solution) {
-		launch(installation, solution, true);
-	}
-
-	@Override
-	public void launchSolution(HIPSInstallation installation, HIPSolution solution) {
-		launch(installation, solution, false);
+	public void launchSolution(HIPSInstallation installation, HIPSolution solution, String action) {
+		launch(installation, solution, action);
 	}
 
 	@EventHandler
 	private void launchSolution(HIPSLaunchRequestEvent event) {
 		new Thread(() -> {
-			if(event.launchAsTutorial()) {
-				launchSolutionAsTutorial(event.getInstallation(), event.getSolution());
-			} else {
-				launchSolution(event.getInstallation(), event.getSolution());
-			}
+			launchSolution(event.getInstallation(), event.getSolution(), event.getAction());
 		}).start();
 	}
 
@@ -292,9 +283,8 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 		FileUtils.deleteDirectory(new File(getHIPSEnvironmentPath(installation)));
 	}
 
-	private void launch(HIPSInstallation installation, HIPSolution solution, boolean asTutorial) {
+	private void launch(HIPSInstallation installation, HIPSolution solution, String actionName) {
 		ObjectMapper mapper = new ObjectMapper();
-		String actionName = asTutorial? "tutorial" : "run";
 		String path = solution.getCatalog() + "/" + solution.getGroup() + "/" + solution.getName() + "/" + solution.getVersion() + "/" + actionName;
 		ObjectNode solutionArgs = mapper.createObjectNode();
 
