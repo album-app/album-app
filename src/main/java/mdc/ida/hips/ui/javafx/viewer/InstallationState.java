@@ -201,6 +201,7 @@ public class InstallationState {
 
 	public void createEnvironment() throws IOException, InterruptedException {
 		hipsService.createHIPSEnvironment(installation);
+		hipsService.checkIfHIPSEnvironmentExists(installation);
 	}
 
 	public void runServer() {

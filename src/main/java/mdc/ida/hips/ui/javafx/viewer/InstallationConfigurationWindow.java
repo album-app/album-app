@@ -151,11 +151,13 @@ public class InstallationConfigurationWindow extends Stage {
 		Text statusText = getStatusText(installationState.hasHipsEnvironmentProperty(), "HIPS environment exists", "HIPS environment does not exist");
 		Button btn = new Button("Create Environment");
 		btn.setOnAction(event -> {
-			try {
-				installationState.createEnvironment();
-			} catch (IOException | InterruptedException e) {
-				e.printStackTrace();
-			}
+			new Thread(() -> {
+				try {
+					installationState.createEnvironment();
+				} catch (IOException | InterruptedException e) {
+					e.printStackTrace();
+				}
+			}).start();
 		});
 		btn.disableProperty().bind(Bindings.createBooleanBinding(
 				() -> !installationState.isCondaInstalled() || installationState.isHasHipsEnvironment(),
