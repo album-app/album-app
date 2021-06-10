@@ -364,20 +364,23 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 					+ (SystemUtils.IS_OS_WINDOWS ? new File(environmentPath, "python").getAbsolutePath() + " -m " : "")
 					+ "hips server --port " + installation.getPort();
 			command = condaService.createCondaCommand(condaPath, commandInCondaEnv);
+
 			log().info(Arrays.toString(command));
 
 			ProcessBuilder builder = new ProcessBuilder(command);
+
 			Map<String, String> env = builder.environment();
+
 			env.put("HIPS_DEFAULT_CATALOG", installation.getDefaultCatalog());
-			String condaExecutable = condaService.getCondaExecutable(new File(condaPath.getAbsolutePath()));
-			String condaBinPath = new File(condaExecutable).getParentFile().getAbsolutePath();
-			String pathDelimiter = SystemUtils.IS_OS_WINDOWS ? ";" : ":";
-			String path = condaPath.getAbsolutePath() + pathDelimiter + condaBinPath;
-			env.put("PATH", env.get("PATH") != null? (env.get("PATH") + pathDelimiter + path) : path);
+			env.put("HIPS_CONDA_PATH", condaPath.getAbsolutePath());
+
 			log.info("Server environment variables: " + env);
+
 			final AtomicReference<Boolean> portInUse = new AtomicReference<>(false);
 			serverException.set(false);
+
 			Process process = builder.start();
+
 			String addressInUseError = "[Errno 98] Address already in use";
 			StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream(), log()) {
 				@Override
