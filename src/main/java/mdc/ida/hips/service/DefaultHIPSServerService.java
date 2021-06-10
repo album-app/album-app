@@ -371,7 +371,9 @@ public class DefaultHIPSServerService extends AbstractService implements HIPSSer
 			env.put("HIPS_DEFAULT_CATALOG", installation.getDefaultCatalog());
 			String condaExecutable = condaService.getCondaExecutable(new File(condaPath.getAbsolutePath()));
 			String condaBinPath = new File(condaExecutable).getParentFile().getAbsolutePath();
-			env.put("PATH", env.get("PATH") != null? (env.get("PATH") + ":" + condaBinPath) : condaBinPath);
+			String pathDelimiter = SystemUtils.IS_OS_WINDOWS ? ";" : ":";
+			String path = condaPath.getAbsolutePath() + pathDelimiter + condaBinPath;
+			env.put("PATH", env.get("PATH") != null? (env.get("PATH") + pathDelimiter + path) : path);
 			log.info("Server environment variables: " + env);
 			final AtomicReference<Boolean> portInUse = new AtomicReference<>(false);
 			serverException.set(false);
