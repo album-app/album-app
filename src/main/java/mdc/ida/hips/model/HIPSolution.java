@@ -6,6 +6,7 @@ import javafx.beans.property.StringProperty;
 import java.util.List;
 
 public class HIPSolution {
+	private final StringProperty catalog = new SimpleStringProperty();
 	private final StringProperty name = new SimpleStringProperty();
 	private final StringProperty group = new SimpleStringProperty();
 	private final StringProperty version = new SimpleStringProperty();
@@ -79,5 +80,17 @@ public class HIPSolution {
 
 	public void setVersion(String version) {
 		this.version.set(version);
+	}
+
+	public String getCatalog() {
+		return catalog.get();
+	}
+
+	public StringProperty catalogProperty() {
+		return catalog;
+	}
+
+	public void setCatalog(String catalog) {
+		this.catalog.set(catalog);
 	}
 }

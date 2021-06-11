@@ -29,7 +29,7 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
-import org.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
+import mdc.ida.hips.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
 import org.scijava.ui.viewer.DisplayViewer;
 
 import java.util.function.Consumer;
@@ -70,8 +70,9 @@ public class HIPSCatalogDisplayViewer extends EasyJavaFXDisplayViewer<HIPSCatalo
 		tableView.getColumns().add(makeColumn("Version", "version"));
 		tableView.getColumns().add(makeColumn("Description", "description"));
 		addButton(tableView, 0, "About", hips -> uiService.show(hips.getName(), hips));
-		addButton(tableView, 0, "Tutorial", hips -> eventService.publish(new HIPSLaunchRequestEvent(hips, true)));
-		addButton(tableView, 0, "Run", hips -> eventService.publish(new HIPSLaunchRequestEvent(hips, false)));
+		addButton(tableView, 0, "Install",
+				hips -> eventService.publish(new HIPSLaunchRequestEvent(collection.getParent(), hips, "install")));
+		addButton(tableView, 0, "Run", hips -> eventService.publish(new HIPSLaunchRequestEvent(collection.getParent(), hips, "run")));
 		collection.forEach(hipSolution -> tableView.getItems().add(hipSolution));
 		tableView.setBorder(Border.EMPTY);
 		tableView.setBackground(Background.EMPTY);
@@ -112,12 +113,12 @@ public class HIPSCatalogDisplayViewer extends EasyJavaFXDisplayViewer<HIPSCatalo
 	}
 
 	private HBox createScaleButtons() {
-		Node btnAtom = createImageButton("/scale-atom.png");
-		Node btnMolecule = createImageButton("/scale-molecule.png");
-		Node btnCell = createImageButton("/scale-cell.png");
-		Node btnOrganism = createImageButton("/scale-organism.png");
-		Node btnTerrestrial = createImageButton("/scale-terrestrial.png");
-		Node btnUniverse = createImageButton("/scale-universe.png");
+		Node btnAtom = createImageButton("scale-atom.png");
+		Node btnMolecule = createImageButton("scale-molecule.png");
+		Node btnCell = createImageButton("scale-cell.png");
+		Node btnOrganism = createImageButton("scale-organism.png");
+		Node btnTerrestrial = createImageButton("scale-terrestrial.png");
+		Node btnUniverse = createImageButton("scale-universe.png");
 		return new HBox(btnAtom, btnMolecule, btnCell, btnOrganism, btnTerrestrial, btnUniverse);
 	}
 
@@ -143,7 +144,7 @@ public class HIPSCatalogDisplayViewer extends EasyJavaFXDisplayViewer<HIPSCatalo
 	private void addButton(TableView<HIPSolution> table, int index, String text, Consumer<HIPSolution> action) {
 		TableColumn<HIPSolution, Void> colBtn = new TableColumn<>("");
 
-		Callback<TableColumn<HIPSolution, Void>, TableCell<HIPSolution, Void>> cellFactory = new Callback<>() {
+		Callback<TableColumn<HIPSolution, Void>, TableCell<HIPSolution, Void>> cellFactory = new Callback<TableColumn<HIPSolution, Void>, TableCell<HIPSolution, Void>>() {
 			@Override
 			public TableCell<HIPSolution, Void> call(final TableColumn<HIPSolution, Void> param) {
 				return new TableCell<>() {

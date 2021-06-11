@@ -9,8 +9,13 @@ import java.util.ArrayList;
 
 public class HIPSCatalog extends ArrayList<HIPSolution> {
 
+	private final HIPSInstallation parent;
 	private final StringProperty name = new SimpleStringProperty();
 	private final BooleanProperty isLocal = new SimpleBooleanProperty();
+
+	public HIPSCatalog(HIPSInstallation parent) {
+		this.parent = parent;
+	}
 
 	public boolean isIsLocal() {
 		return isLocal.get();
@@ -34,5 +39,9 @@ public class HIPSCatalog extends ArrayList<HIPSolution> {
 
 	public void setName(String name) {
 		this.name.set(name);
+	}
+
+	public HIPSInstallation getParent() {
+		return parent;
 	}
 }

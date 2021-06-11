@@ -6,14 +6,13 @@ import mdc.ida.hips.HIPS;
 import mdc.ida.hips.model.HIPSCatalog;
 import mdc.ida.hips.model.HIPSCollection;
 import mdc.ida.hips.model.HIPSCollectionUpdatedEvent;
-import org.junit.After;
-import org.junit.Test;
+import mdc.ida.hips.model.LocalHIPSInstallation;
 
 import java.io.IOException;
 
 public class E01_DisplayCollection extends AbstractHowto {
 
-	@Test
+//	@Test
 	public void run() throws IOException {
 		// use dummy server to test launcher, otherwise connect to external HIPS server launched from Python
 		int port = 1235;
@@ -22,9 +21,10 @@ public class E01_DisplayCollection extends AbstractHowto {
 		// launch HIPS launcher
 		hips = new HIPS();
 		hips.launch("--port", String.valueOf(port));
+		LocalHIPSInstallation installation = hips.loadLocalInstallation();
 
 		// ask for updated collection index
-		hips.server().updateIndex(this::collectionUpdated);
+		hips.server().updateIndex(installation, this::collectionUpdated);
 	}
 
 	public void collectionUpdated(HIPSCollectionUpdatedEvent event) {
