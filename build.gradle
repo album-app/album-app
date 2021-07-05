@@ -40,18 +40,18 @@ dependencies {
 
 group = 'mdc.ida'
 version = '0.1.0-SNAPSHOT'
-description = 'HIPS launcher'
+description = 'album launcher'
 sourceCompatibility = '9'
 targetCompatibility = '9'
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            artifactId = 'hips'
+            artifactId = 'album-app'
             from components.java
             pom {
-                name = 'hips'
-                description = 'A HIPS launcher'
+                name = 'album-app'
+                description = 'The album app'
                 url = 'http://www.example.com/library'
                 licenses {
                     license {
@@ -85,8 +85,8 @@ publishing {
 }
 
 application {
-    mainClassName = 'mdc.ida.hips.Main'
-    applicationName = 'hips'
+    mainClassName = 'mdc.ida.album.Main'
+    applicationName = 'album'
 }
 
 configurations.all {
@@ -115,11 +115,11 @@ test {
 jlink {
     options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
     launcher {
-        name = 'HIPS'
+        name = 'album'
 //        jvmArgs = ['-Djdk.gtk.version=2'] // required due to a bug in Java: https://github.com/javafxports/openjdk-jfx/issues/175
     }
     jpackage {
-        icon = "/src/main/resources/mdc/ida/hips/icons/plugin.png"
+        icon = "/src/main/resources/mdc/ida/album/icons/plugin.png"
     }
 }
 

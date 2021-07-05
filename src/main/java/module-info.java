@@ -1,15 +1,15 @@
-module mdc.ida.hips {
-	opens mdc.ida.hips to org.scijava;
-	opens mdc.ida.hips.model to javafx.base;
-	opens mdc.ida.hips.app to org.scijava;
-	opens mdc.ida.hips.commands to org.scijava;
-	opens mdc.ida.hips.service to org.scijava;
-	opens mdc.ida.hips.service.conda to org.scijava;
-	opens mdc.ida.hips.ui.javafx;
-	opens mdc.ida.hips.ui.javafx.viewer;
-	opens mdc.ida.hips.scijava.ui.javafx to org.scijava;
-	opens mdc.ida.hips.scijava.ui.javafx.viewer to org.scijava;
-	opens mdc.ida.hips.scijava.ui.javafx.widget to org.scijava;
+module mdc.ida.album {
+	opens mdc.ida.album to org.scijava;
+	opens mdc.ida.album.model to javafx.base;
+	opens mdc.ida.album.app to org.scijava;
+	opens mdc.ida.album.commands to org.scijava;
+	opens mdc.ida.album.service to org.scijava;
+	opens mdc.ida.album.service.conda to org.scijava;
+	opens mdc.ida.album.ui.javafx;
+	opens mdc.ida.album.ui.javafx.viewer;
+	opens mdc.ida.album.scijava.ui.javafx to org.scijava;
+	opens mdc.ida.album.scijava.ui.javafx.viewer to org.scijava;
+	opens mdc.ida.album.scijava.ui.javafx.widget to org.scijava;
 	requires org.scijava;
 	requires javafx.graphics;
 	requires javafx.controls;
