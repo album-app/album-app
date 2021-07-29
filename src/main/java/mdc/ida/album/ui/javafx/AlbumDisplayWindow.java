@@ -3,6 +3,7 @@ package mdc.ida.album.ui.javafx;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.event.EventHandler;
+import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -31,8 +32,9 @@ public class AlbumDisplayWindow extends Tab implements DisplayWindow {
 
 	@Override
 	public void setContent(final DisplayPanel panel) {
-		VBox p = (VBox) panel;
+		Node p = (Node) panel;
 		root = new VBox(p);
+		VBox.setVgrow(p, Priority.ALWAYS);
 		VBox.setVgrow(root, Priority.ALWAYS);
 		this.setContent(root);
 
@@ -44,6 +46,7 @@ public class AlbumDisplayWindow extends Tab implements DisplayWindow {
 
 	@Override
 	public void pack() {
+		if(getTabPane() != null) getTabPane().requestLayout();
 	}
 
 	@Override

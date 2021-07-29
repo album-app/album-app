@@ -1,6 +1,7 @@
 package mdc.ida.album;
 
 import mdc.ida.album.model.LocalAlbumInstallation;
+import mdc.ida.album.model.LocalInstallationLoadedEvent;
 import mdc.ida.album.model.RemoteAlbumInstallation;
 import mdc.ida.album.scijava.ui.javafx.JavaFXService;
 import mdc.ida.album.service.AlbumServerService;
@@ -14,6 +15,7 @@ import org.scijava.service.SciJavaService;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 @Plugin(type = Gateway.class)
 public class Album extends AbstractGateway {
@@ -26,8 +28,6 @@ public class Album extends AbstractGateway {
 
 	@Parameter
 	private JavaFXService javaFXService;
-
-	private final String DEFAULT_HOST_LOCAL = "http://127.0.0.1";
 
 	@Override
 	public void launch(String... args) {
@@ -45,24 +45,31 @@ public class Album extends AbstractGateway {
 		javaFXService.setHeadless(true);
 	}
 
-	public LocalAlbumInstallation loadLocalInstallation(String...args) {
-		AlbumOptions.Values options = parseOptions(Arrays.asList(args));
-		return loadLocalInstallation(options);
+	public void loadLocalInstallation(String...args) {
+		loadLocalInstallation(e -> {}, args);
 	}
 
-	public LocalAlbumInstallation loadLocalInstallation(AlbumOptions.Values options) {
+	public void loadLocalInstallation(Consumer<LocalInstallationLoadedEvent> callback, String...args) {
+		AlbumOptions.Values options = parseOptions(Arrays.asList(args));
+		loadLocalInstallation(callback, options);
+	}
+
+	public void loadLocalInstallation(AlbumOptions.Values options) {
+		loadLocalInstallation(e -> {}, options);
+	}
+
+	public void loadLocalInstallation(Consumer<LocalInstallationLoadedEvent> callback, AlbumOptions.Values options) {
 		log().info("Loading local album installation..");
 		LocalAlbumInstallation localInstallation = albumService.loadLocalInstallation();
 		if(options.port().isPresent()) localInstallation.setPort(options.port().get());
 		if(!ui().isHeadless()) {
 			ui().show("Welcome", localInstallation);
 		}
-		albumService.runWithChecks(localInstallation);
-		return localInstallation;
+		albumService.runWithChecks(localInstallation, callback);
 	}
 
 	public RemoteAlbumInstallation loadRemoteInstallation(AlbumOptions.Values options) {
-		if(options.host().isPresent() && !options.host().get().equals(DEFAULT_HOST_LOCAL)) {
+		if(options.host().isPresent() && !options.host().get().equals(DefaultValues.HOST_LOCAL)) {
 			log().info("Loading remote album installation from " + options.host() + ":" + options.port() + "..");
 			return albumService.loadRemoteInstallation(options.host().get(), options.port().get());
 		} else {

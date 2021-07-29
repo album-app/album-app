@@ -31,6 +31,7 @@
 
 package mdc.ida.album.app;
 
+import mdc.ida.album.DefaultValues;
 import mdc.ida.album.commands.AboutAlbum;
 import mdc.ida.album.commands.Preferences;
 import mdc.ida.album.commands.QuitProgram;
@@ -50,12 +51,12 @@ public class AlbumApp extends AbstractApp {
 
 	@Override
 	public String getGroupId() {
-		return "mdc.ida";
+		return DefaultValues.GROUP_ID;
 	}
 
 	@Override
 	public String getArtifactId() {
-		return "album-app";
+		return DefaultValues.ARTIFACT_ID;
 	}
 
 	@Override

@@ -11,6 +11,8 @@ public class Catalog extends ArrayList<Solution> {
 
 	private final AlbumInstallation parent;
 	private final StringProperty name = new SimpleStringProperty();
+	private final StringProperty path = new SimpleStringProperty();
+	private final StringProperty src = new SimpleStringProperty();
 	private final BooleanProperty isLocal = new SimpleBooleanProperty();
 
 	public Catalog(AlbumInstallation parent) {
@@ -43,5 +45,17 @@ public class Catalog extends ArrayList<Solution> {
 
 	public AlbumInstallation getParent() {
 		return parent;
+	}
+
+	public void setSrc(String src) {
+		this.src.set(src);
+	}
+
+	public void setPath(String path) {
+		this.path.set(path);
+	}
+
+	public String getPath() {
+		return path.get();
 	}
 }

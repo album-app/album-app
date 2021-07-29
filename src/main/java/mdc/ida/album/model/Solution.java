@@ -1,7 +1,10 @@
 package mdc.ida.album.model;
 
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.ObservableList;
 
 import java.util.List;
 
@@ -12,7 +15,14 @@ public class Solution {
 	private final StringProperty version = new SimpleStringProperty();
 	private final StringProperty title = new SimpleStringProperty();
 	private final StringProperty description = new SimpleStringProperty();
+	private final StringProperty documentation = new SimpleStringProperty();
+	private final StringProperty repo = new SimpleStringProperty();
+	private final StringProperty license = new SimpleStringProperty();
+	private final StringProperty author = new SimpleStringProperty();
+	private final StringProperty cite = new SimpleStringProperty();
+	private final ListProperty<String> tags = new SimpleListProperty<>();
 	private List<SolutionArgument> args;
+	private AlbumInstallation installation;
 
 	public String getTitle() {
 		return title.get();
@@ -92,5 +102,85 @@ public class Solution {
 
 	public void setCatalog(String catalog) {
 		this.catalog.set(catalog);
+	}
+
+	public String getDocumentation() {
+		return documentation.get();
+	}
+
+	public StringProperty documentationProperty() {
+		return documentation;
+	}
+
+	public void setDocumentation(String documentation) {
+		this.documentation.set(documentation);
+	}
+
+	public String getRepo() {
+		return repo.get();
+	}
+
+	public StringProperty repoProperty() {
+		return repo;
+	}
+
+	public void setRepo(String repo) {
+		this.repo.set(repo);
+	}
+
+	public String getLicense() {
+		return license.get();
+	}
+
+	public StringProperty licenseProperty() {
+		return license;
+	}
+
+	public void setLicense(String license) {
+		this.license.set(license);
+	}
+
+	public String getAuthors() {
+		return author.get();
+	}
+
+	public StringProperty authorProperty() {
+		return author;
+	}
+
+	public void setAuthor(String author) {
+		this.author.set(author);
+	}
+
+	public ObservableList<String> getTags() {
+		return tags.get();
+	}
+
+	public ListProperty<String> tagsProperty() {
+		return tags;
+	}
+
+	public String getCite() {
+		return cite.get();
+	}
+
+	public StringProperty citeProperty() {
+		return cite;
+	}
+
+	public void setCite(String cite) {
+		this.cite.set(cite);
+	}
+
+	public void setTags(ObservableList<String> tags) {
+		this.tags.set(tags);
+	}
+
+	public AlbumInstallation getInstallation() {
+		return installation;
+	}
+
+	public void setInstallation(AlbumInstallation installation) {
+		this.installation = installation;
 	}
 }

@@ -4,6 +4,7 @@ import mdc.ida.album.AbstractHowto;
 import mdc.ida.album.DummyServer;
 import mdc.ida.album.Album;
 import mdc.ida.album.model.Catalog;
+import mdc.ida.album.model.LocalInstallationLoadedEvent;
 import mdc.ida.album.model.SolutionCollection;
 import mdc.ida.album.model.CollectionUpdatedEvent;
 import mdc.ida.album.model.LocalAlbumInstallation;
@@ -21,18 +22,24 @@ public class E01_DisplayCollection extends AbstractHowto {
 		// launch album
 		album = new Album();
 		album.launch("--port", String.valueOf(port));
-		LocalAlbumInstallation installation = album.loadLocalInstallation();
+		album.loadLocalInstallation();
+		album.loadLocalInstallation(this::installationLoaded);
 
-		// ask for updated collection index
-		album.server().updateIndex(installation, this::collectionUpdated);
+	}
+
+	public void installationLoaded(LocalInstallationLoadedEvent e) {
+		// once the installation is loaded, update the collection
+		try {
+			album.server().updateIndex(e.getInstallation(), this::collectionUpdated);
+		} catch (IOException ioException) {
+			ioException.printStackTrace();
+		}
 	}
 
 	public void collectionUpdated(CollectionUpdatedEvent event) {
-		// once the collection is updated, display all catalogs
+		// once the collection is updated, display it
 		SolutionCollection collection = event.getCollection();
-		for (Catalog catalog : collection) {
-			album.ui().show(catalog.getName(), catalog);
-		}
+		album.ui().show("my collection", collection);
 	}
 
 	public static void main(String... args) throws IOException {

@@ -1,4 +1,4 @@
-package mdc.ida.album;
+package mdc.ida.album.control;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +16,6 @@ public class AlbumClient {
 
     private int port;
     private String host;
-    private boolean increasePort = false;
 
     public AlbumClient(String host, int port) {
         this.port = port;

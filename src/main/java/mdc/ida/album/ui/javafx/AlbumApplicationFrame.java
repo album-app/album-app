@@ -59,7 +59,7 @@ public class AlbumApplicationFrame implements ApplicationFrame {
 
 		window.setScene(scene);
 		window.setTitle(title);
-		window.setWidth(800);
+		window.setWidth(830);
 		window.setHeight(500);
 		window.show();
 		window.setOnCloseRequest(event -> {

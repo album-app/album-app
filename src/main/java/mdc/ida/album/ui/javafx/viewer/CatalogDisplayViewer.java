@@ -1,27 +1,23 @@
 package mdc.ida.album.ui.javafx.viewer;
 
-import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.util.Callback;
+import mdc.ida.album.UITextValues;
 import mdc.ida.album.model.Catalog;
 import mdc.ida.album.model.Solution;
 import mdc.ida.album.model.SolutionLaunchRequestEvent;
+import mdc.ida.album.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
 import org.scijava.Context;
 import org.scijava.command.CommandService;
 import org.scijava.event.EventService;
@@ -29,10 +25,9 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
-import mdc.ida.album.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
 import org.scijava.ui.viewer.DisplayViewer;
 
-import java.util.function.Consumer;
+import static mdc.ida.album.ui.javafx.viewer.JavaFXUtils.addButtonColumn;
 
 /**
  * This class displays a {@link Catalog}.
@@ -58,22 +53,22 @@ public class CatalogDisplayViewer extends EasyJavaFXDisplayViewer<Catalog> {
 	}
 
 	@Override
-	protected boolean canView(Catalog collection) {
+	protected boolean canView(Catalog catalog) {
 		return true;
 	}
 
 	@Override
-	protected VBox createDisplayPanel(Catalog collection) {
-		this.collection = collection;
+	protected VBox createDisplayPanel(Catalog catalog) {
+		this.collection = catalog;
 		TableView<Solution> tableView = new TableView<>();
-		tableView.getColumns().add(makeColumn("Title", "title"));
-		tableView.getColumns().add(makeColumn("Version", "version"));
-		tableView.getColumns().add(makeColumn("Description", "description"));
-		addButton(tableView, 0, "About", solution -> uiService.show(solution.getName(), solution));
-		addButton(tableView, 0, "Install",
-				solution -> eventService.publish(new SolutionLaunchRequestEvent(collection.getParent(), solution, "install")));
-		addButton(tableView, 0, "Run", solution -> eventService.publish(new SolutionLaunchRequestEvent(collection.getParent(), solution, "run")));
-		collection.forEach(solution -> tableView.getItems().add(solution));
+		tableView.getColumns().add(makeColumn(UITextValues.SOLUTION_LIST_HEADER_TITLE, "title"));
+		tableView.getColumns().add(makeColumn(UITextValues.SOLUTION_LIST_HEADER_VERSION, "version"));
+		tableView.getColumns().add(makeColumn(UITextValues.SOLUTION_LIST_HEADER_DESCRIPTION, "description"));
+		addButtonColumn(tableView, 3, s-> UITextValues.SOLUTION_LIST_HEADER_ABOUT, solution -> uiService.show(solution.getName(), solution));
+		addButtonColumn(tableView, 4, s-> UITextValues.SOLUTION_LIST_HEADER_INSTALL,
+				solution -> eventService.publish(new SolutionLaunchRequestEvent(catalog.getParent(), solution, "install")));
+		addButtonColumn(tableView, 5, s-> UITextValues.SOLUTION_LIST_HEADER_RUN, solution -> eventService.publish(new SolutionLaunchRequestEvent(catalog.getParent(), solution, "run")));
+		catalog.forEach(solution -> tableView.getItems().add(solution));
 		tableView.setBorder(Border.EMPTY);
 		tableView.setBackground(Background.EMPTY);
 		VBox vBox = new VBox(createFilter(), tableView);
@@ -91,7 +86,7 @@ public class CatalogDisplayViewer extends EasyJavaFXDisplayViewer<Catalog> {
 		final Pane spacer = new Pane();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 		spacer.setMinSize(10, 1);
-		HBox box = new HBox(createTypeButtons(), spacer, createScaleButtons());
+		HBox box = new HBox(createTypeButtons(), spacer);
 		box.setPadding(new Insets(5));
 		return box;
 	}
@@ -112,69 +107,10 @@ public class CatalogDisplayViewer extends EasyJavaFXDisplayViewer<Catalog> {
 		return box;
 	}
 
-	private HBox createScaleButtons() {
-		Node btnAtom = createImageButton("scale-atom.png");
-		Node btnMolecule = createImageButton("scale-molecule.png");
-		Node btnCell = createImageButton("scale-cell.png");
-		Node btnOrganism = createImageButton("scale-organism.png");
-		Node btnTerrestrial = createImageButton("scale-terrestrial.png");
-		Node btnUniverse = createImageButton("scale-universe.png");
-		return new HBox(btnAtom, btnMolecule, btnCell, btnOrganism, btnTerrestrial, btnUniverse);
-	}
-
 	private ToggleButton createTextButton(String name) {
 		ToggleButton btn = new ToggleButton(name);
 		btn.setPrefHeight(42);
 		return btn;
-	}
-
-	private Node createImageButton(String iconPath) {
-		Image img = new Image(getClass().getResourceAsStream(iconPath));
-		ImageView view = new ImageView(img);
-		view.setFitHeight(42);
-		view.setPreserveRatio(true);
-		ToggleButton button = new ToggleButton();
-		button.setPrefSize(42, 42);
-		button.setPadding(Insets.EMPTY);
-		button.setGraphic(view);
-		button.setSelected(true);
-		return button;
-	}
-
-	private void addButton(TableView<Solution> table, int index, String text, Consumer<Solution> action) {
-		TableColumn<Solution, Void> colBtn = new TableColumn<>("");
-
-		Callback<TableColumn<Solution, Void>, TableCell<Solution, Void>> cellFactory = new Callback<TableColumn<Solution, Void>, TableCell<Solution, Void>>() {
-			@Override
-			public TableCell<Solution, Void> call(final TableColumn<Solution, Void> param) {
-				return new TableCell<>() {
-
-					private final Button btn = new Button(text);
-
-					{
-						btn.setOnAction((ActionEvent event) -> {
-							Solution data = getTableView().getItems().get(getIndex());
-							new Thread(() -> action.accept(data)).start();
-						});
-					}
-
-					@Override
-					public void updateItem(Void item, boolean empty) {
-						super.updateItem(item, empty);
-						if (empty) {
-							setGraphic(null);
-						} else {
-							setGraphic(btn);
-						}
-					}
-				};
-			}
-		};
-
-		colBtn.setCellFactory(cellFactory);
-
-		table.getColumns().add(index, colBtn);
-
 	}
 
 	@Override
