@@ -3,7 +3,6 @@ variables:
 
 cache:
   paths:
-    - .cache/pip
     - venv/
     - .m2/repository
     - download/
