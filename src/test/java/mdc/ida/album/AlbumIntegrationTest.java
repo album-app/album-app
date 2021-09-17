@@ -1,9 +1,10 @@
 package mdc.ida.album;
 
 import mdc.ida.album.model.Catalog;
-import mdc.ida.album.model.SolutionCollection;
 import mdc.ida.album.model.LocalAlbumInstallation;
 import mdc.ida.album.model.LocalInstallationLoadedEvent;
+import mdc.ida.album.model.SolutionCollection;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,12 @@ public class AlbumIntegrationTest {
 	@AfterEach
 	void tearDown() {
 		album.dispose();
+
+		try {
+			FileUtils.deleteDirectory(folder.toPath().toFile());
+		} catch (IOException e) {
+			// ignore
+		}
 	}
 
 	@Test
