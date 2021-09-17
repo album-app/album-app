@@ -1,12 +1,12 @@
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-#cache:
-#  paths:
-#    - venv/
-#    - .m2/repository
-#    - download/
-#    - Gradle/
+cache:
+  paths:
+    - venv/
+    - .m2/repository
+    - download/
+    - Gradle/
 
 stages:
   - build
@@ -26,7 +26,7 @@ windows_job:
     - $env:JAVA_HOME="C:\JDK11\jdk-11.0.11+9"
     - if(-Not (Test-Path .\download\gradle-6.8.3-bin.zip)) {Invoke-WebRequest -UseBasicParsing -Uri "https://services.gradle.org/distributions/gradle-6.8.3-bin.zip" -OutFile .\download\gradle-6.8.3-bin.zip}
     - if(-Not (Test-Path .\Gradle)) {Expand-Archive -Path ".\download\gradle-6.8.3-bin.zip" -DestinationPath ".\Gradle"}
-    - $cmnd = powershell.exe -command {.\Gradle\gradle-6.8.3\bin\gradle clean test 2>&1 | Write-Host; exit(0)}
+    - $cmnd = powershell -NonInteractive -command {.\Gradle\gradle-6.8.3\bin\gradle clean test 2>&1 | Write-Host; exit(0)}
     - if ("Success" -in $cmnd[-2..-1]) {exit(0)} else {exit(1)}
 
 macos_job:
