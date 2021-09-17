@@ -11,30 +11,21 @@ cache:
 stages:
   - build
   - test
+  - deploy
 
-windows_job:
-  #  image:  mcr.microsoft.com/windows/servercore:20H2
-  stage: test
+.windows_base_template:
+  before_script:
+    - if(-Not (Test-Path .\download)) {New-Item -ItemType Directory -Force -Path .\download}
+    - if(-Not (Test-Path .\download\jdk16.zip)) {Invoke-WebRequest -UseBasicParsing -Uri "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_windows_hotspot_16.0.2_7.zip" -OutFile .\download\jdk16.zip}
+    - Expand-Archive -Path ".\download\jdk16.zip" -DestinationPath "C:\JDK16"
+    - $env:JAVA_HOME="C:\JDK16\jdk-16.0.2+7"
+#    - if(-Not (Test-Path .\download\gradle-7.2-bin.zip)) {Invoke-WebRequest -UseBasicParsing -Uri "https://services.gradle.org/distributions/gradle-7.2-bin.zip" -OutFile .\download\gradle-7.2-bin.zip}
+#    - if(-Not (Test-Path .\Gradle)) {Expand-Archive -Path ".\download\gradle-7.2-bin.zip" -DestinationPath ".\Gradle"}
   tags:
     - windows
-  variables:
-    ErrorActionPreference: STOP
-  script:
-    - if(-Not (Test-Path .\download)) {New-Item -ItemType Directory -Force -Path .\download}
-    - if(-Not (Test-Path .\download\jdk11.zip)) {Invoke-WebRequest -UseBasicParsing -Uri "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.11%2B9/OpenJDK11U-jdk_x64_windows_hotspot_11.0.11_9.zip" -OutFile .\download\jdk11.zip}
-    - Expand-Archive -Path ".\download\jdk11.zip" -DestinationPath "C:\JDK11"
-    - $env:JAVA_HOME="C:\JDK11\jdk-11.0.11+9"
-    - if(-Not (Test-Path .\download\gradle-6.8.3-bin.zip)) {Invoke-WebRequest -UseBasicParsing -Uri "https://services.gradle.org/distributions/gradle-6.8.3-bin.zip" -OutFile .\download\gradle-6.8.3-bin.zip}
-    - if(-Not (Test-Path .\Gradle)) {Expand-Archive -Path ".\download\gradle-6.8.3-bin.zip" -DestinationPath ".\Gradle"}
-    - $cmnd = powershell -NonInteractive -command {.\Gradle\gradle-6.8.3\bin\gradle clean test 2>&1 | Write-Host; exit(0)}
-    - if ("Success" -in $cmnd[-2..-1]) {exit(0)} else {exit(1)}
 
-macos_job:
-  stage: test
-  tags:
-    - macos
-    - shell
-  script:
+.macos_base_template:
+  before_script:
     - echo "$(uname)"
     - sw_vers
     - tmpdir=$(mktemp -d /tmp/album-app-test.XXXXXX)
@@ -51,12 +42,65 @@ macos_job:
     - curl -k -L -v -X GET https://services.gradle.org/distributions/gradle-6.8.3-bin.zip > $tmpdir/gradle-6.8.3-bin.zip
     - unzip -d $tmpdir/gradle $tmpdir/gradle-6.8.3-bin.zip
     - ls $tmpdir/gradle/gradle-6.8.3
-    - $tmpdir/gradle/gradle-6.8.3/bin/gradle clean test
+  tags:
+    - macos
+    - shell
 
-ubuntu_job:
-  image: gradle:6.8.3-jdk11
+.linux_base_template:
+  image: gradle:7.2-jdk16
+
+windows_test:
+  extends: .windows_base_template
   stage: test
-#  tags:
-#    - ubuntu
   script:
-    - 'gradle clean test'
+    - powershell -NonInteractive -command {.\gradlew clean test --no-daemon}
+
+windows_deploy:
+  extends: .windows_base_template
+  stage: deploy
+  script:
+    - dir
+    - powershell -NonInteractive -command {.\gradlew jlinkZip --no-daemon}
+#    - $cmnd = powershell -NonInteractive -command {.\Gradle\gradle-7.2\bin\gradle jlinkZip --no-daemon 2>&1 | Write-Host; .\Gradle\gradle-7.2\bin\gradle -PjpackageInstallerType="exe" -PjpackageIcon="icon.ico" jpackage --no-daemon 2>&1 | Write-Host; .\Gradle\gradle-7.2\bin\gradle -PjpackageInstallerType="msi" -PjpackageIcon="icon.ico" jpackage --no-daemon 2>&1 | Write-Host; exit(0)}
+#    - if ("Success" -in $cmnd[-2..-1]) {exit(0)} else {exit(1)}
+  artifacts:
+    paths:
+      - build/image.zip
+      - build/jpackage/*.exe
+      - build/jpackage/*.msi
+
+
+.macos_test:
+  extends: .macos_base_template
+  stage: test
+  script:
+    - $tmpdir/gradle/gradle-7.2/bin/gradle clean test
+
+.macos_deploy:
+  extends: .macos_base_template
+  stage: deploy
+  script:
+    - $tmpdir/gradle/gradle-7.2/bin/gradle jlinkZip
+#    - $tmpdir/gradle/gradle-7.2/bin/gradle -PjpackageInstallerType="pkg" jpackage
+#    - $tmpdir/gradle/gradle-7.2/bin/gradle -PjpackageInstallerType="dmg" jpackage
+  artifacts:
+    paths:
+      - build/image.zip
+
+ubuntu_test:
+  extends: .linux_base_template
+  stage: test
+  script:
+    - gradle clean test
+
+ubuntu_deploy:
+  extends: .linux_base_template
+  stage: deploy
+  script:
+#    - sudo apt-get install binutils fakeroot
+    - gradle jlinkZip
+#    - gradle -PjpackageInstallerType="deb" jpackage
+  artifacts:
+    paths:
+      - build/image.zip
+#      - build/jpackage/*.deb
