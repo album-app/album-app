@@ -55,7 +55,7 @@ public class SolutionDisplayViewer extends EasyJavaFXDisplayViewer<Solution> {
 		Node documentation = getText(solution.getDocumentation(), UITextValues.SOLUTION_VIEW_DOCUMENTATION_LABEL, UITextValues.SOLUTION_VIEW_DOCUMENTATION_PLACEHOLDER);
 		Node license = getText(solution.getLicense(), UITextValues.SOLUTION_VIEW_LICENSE_LABEL, UITextValues.SOLUTION_VIEW_LICENSE_PLACEHOLDER);
 		VBox content = new VBox(title, idText, description, citation, authors, license, documentation);
-		Text catalogInfo = new Text(UITextValues.SOLUTION_VIEW_CATALOG_LABEL + solution.getCatalog());
+		Text catalogInfo = new Text(UITextValues.SOLUTION_VIEW_CATALOG_LABEL + solution.getCatalogName());
 		Button installBtn = new Button(UITextValues.SOLUTION_VIEW_INSTALL_BTN);
 		installBtn.setOnAction(e -> eventService.publish(new SolutionLaunchRequestEvent(solution.getInstallation(), solution, "install")));
 		Button runBtn = new Button(UITextValues.SOLUTION_VIEW_RUN_BTN);

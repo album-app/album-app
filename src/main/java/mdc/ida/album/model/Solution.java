@@ -1,6 +1,8 @@
 package mdc.ida.album.model;
 
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -9,7 +11,8 @@ import javafx.collections.ObservableList;
 import java.util.List;
 
 public class Solution {
-	private final StringProperty catalog = new SimpleStringProperty();
+	private final StringProperty catalogName = new SimpleStringProperty();
+	private final IntegerProperty catalogId = new SimpleIntegerProperty();
 	private final StringProperty name = new SimpleStringProperty();
 	private final StringProperty group = new SimpleStringProperty();
 	private final StringProperty version = new SimpleStringProperty();
@@ -92,16 +95,16 @@ public class Solution {
 		this.version.set(version);
 	}
 
-	public String getCatalog() {
-		return catalog.get();
+	public String getCatalogName() {
+		return catalogName.get();
 	}
 
-	public StringProperty catalogProperty() {
-		return catalog;
+	public StringProperty catalogNameProperty() {
+		return catalogName;
 	}
 
-	public void setCatalog(String catalog) {
-		this.catalog.set(catalog);
+	public void setCatalogName(String catalogName) {
+		this.catalogName.set(catalogName);
 	}
 
 	public String getDocumentation() {
@@ -182,5 +185,17 @@ public class Solution {
 
 	public void setInstallation(AlbumInstallation installation) {
 		this.installation = installation;
+	}
+
+	public int getCatalogId() {
+		return catalogId.get();
+	}
+
+	public IntegerProperty catalogIdProperty() {
+		return catalogId;
+	}
+
+	public void setCatalogId(int catalogId) {
+		this.catalogId.set(catalogId);
 	}
 }

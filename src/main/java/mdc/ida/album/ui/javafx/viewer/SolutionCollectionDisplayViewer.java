@@ -45,7 +45,8 @@ public class SolutionCollectionDisplayViewer extends EasyJavaFXDisplayViewer<Sol
 	@Override
 	protected Node createDisplayPanel(SolutionCollection collection) {
 		TableView<Solution> solutionsView = new SolutionsView(context, collection.getInstallation());
-		VBox solutionsBox = new VBox(createFilter(), solutionsView);
+//		VBox solutionsBox = new VBox(createFilter(), solutionsView);
+		VBox solutionsBox = new VBox(solutionsView);
 		CatalogListView catalogView = new CatalogListView(context, collection);
 		catalogView.getCatalogView().getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
 			if (newSelection != null) {

@@ -1,29 +1,24 @@
 package mdc.ida.album.io;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import javafx.beans.property.SimpleListProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import mdc.ida.album.model.AlbumInstallation;
 import mdc.ida.album.model.Catalog;
-import mdc.ida.album.model.LocalAlbumInstallation;
 import mdc.ida.album.model.Solution;
 import mdc.ida.album.model.SolutionArgument;
 import mdc.ida.album.model.SolutionCollection;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 public class CollectionReader {
 
 	public static SolutionCollection readCollection(AlbumInstallation installation, JsonNode jsonNode) {
 		SolutionCollection collection = new SolutionCollection(installation);
-		Iterator<Map.Entry<String, JsonNode>> catalogs = jsonNode.fields();
-		while (catalogs.hasNext()) {
-			Map.Entry<String, JsonNode> catalogNode = catalogs.next();
-			Catalog catalog = readCatalog(installation, catalogNode.getKey(), catalogNode.getValue());
+		for (JsonNode catalogNode : jsonNode.get("catalogs")) {
+			Catalog catalog = readCatalog(installation, catalogNode.get("name").asText(), catalogNode);
 			collection.add(catalog);
 		}
 		return collection;
@@ -32,14 +27,14 @@ public class CollectionReader {
 	private static Catalog readCatalog(AlbumInstallation installation, String name, JsonNode jsonNode) {
 		Catalog catalog = new Catalog(installation);
 		catalog.setName(name);
-		catalog.setIsLocal(jsonNode.get("is_local").asBoolean());
+		catalog.setId(jsonNode.get("catalog_id").asInt());
 		catalog.setSrc(jsonNode.get("src").asText());
 		catalog.setPath(jsonNode.get("path").asText());
 		JsonNode solutions = jsonNode.get("solutions");
 		if(solutions != null) {
 			for (JsonNode solutionNode : solutions) {
 				Solution solution = readSolution(solutionNode);
-				solution.setCatalog(name);
+				solution.setCatalogName(name);
 				solution.setInstallation(installation);
 				catalog.add(solution);
 			}
@@ -49,7 +44,7 @@ public class CollectionReader {
 
 	private static Solution readSolution(JsonNode node) {
 		Solution solution = new Solution();
-		setStringAttr(node, solution::setCatalog, "catalog_id");
+		setIntAttr(node, solution::setCatalogId, "catalog_id");
 		setStringAttr(node, solution::setDescription, "description");
 		setStringAttr(node, solution::setName, "solution_name", "name");
 		setStringAttr(node, solution::setGroup, "solution_group", "group");
@@ -78,14 +73,21 @@ public class CollectionReader {
 
 	private static void setStringAttr(JsonNode arg, Consumer<String> consumer, String fieldName) {
 		JsonNode jsonNode = arg.get(fieldName);
-		if(jsonNode != null && jsonNode.isTextual()) {
+		if(jsonNode != null && (jsonNode.isTextual() || jsonNode.isNumber())) {
 			consumer.accept(jsonNode.asText());
+		}
+	}
+
+	private static void setIntAttr(JsonNode arg, Consumer<Integer> consumer, String fieldName) {
+		JsonNode jsonNode = arg.get(fieldName);
+		if(jsonNode != null && jsonNode.isInt()) {
+			consumer.accept(jsonNode.asInt());
 		}
 	}
 
 	private static void setListStringAttr(JsonNode arg, Consumer<ObservableList<String>> consumer, String fieldName) {
 		JsonNode jsonNode = arg.get(fieldName);
-		ObservableList<String> res = new SimpleListProperty<>();
+		ObservableList<String> res = FXCollections.observableArrayList(new ArrayList<>());
 		if(jsonNode != null) {
 			for (JsonNode node : jsonNode) {
 				if(node.isTextual()) {

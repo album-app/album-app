@@ -21,6 +21,7 @@ import mdc.ida.album.model.RemoteAlbumInstallation;
 import mdc.ida.album.model.ServerProperties;
 import mdc.ida.album.model.Solution;
 import mdc.ida.album.model.SolutionArgument;
+import mdc.ida.album.model.SolutionCollection;
 import mdc.ida.album.model.SolutionLaunchRequestEvent;
 import mdc.ida.album.model.Task;
 import mdc.ida.album.service.conda.CondaExecutableMissingEvent;
@@ -96,14 +97,14 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 
 	private Thread serverThread;
 	final AtomicReference<Boolean> serverException = new AtomicReference<>(false);
+	private SolutionCollection catalogList;
 
 	@Override
 	public LocalAlbumInstallation loadLocalInstallation() {
 		int port = prefService.getInt(DefaultAlbumServerService.class, DefaultValues.ALBUM_PREF_LOCAL_PORT, 8080);
-		String catalog = prefService.get(DefaultAlbumServerService.class, DefaultValues.ALBUM_PREF_LOCAL_DEFAULT_CATALOG, DefaultValues.ALBUM_DEFAULT_CATALOG_URL);
 		log.info("Local album installation: default port: " + port);
-		log.info("Local album installation: default catalog URL: " + catalog);
-		LocalAlbumInstallation installation = new LocalAlbumInstallation(port, catalog);
+//		log.info("Local album installation: default catalog URL: " + catalog);
+		LocalAlbumInstallation installation = new LocalAlbumInstallation(port);
 		File defaultCondaPath = condaService.getDefaultCondaPath();
 		if(defaultCondaPath != null) installation.setCondaPath(defaultCondaPath);
 		else {
@@ -138,7 +139,8 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
 		if(response == null) return;
 		statusService.showStatus("Updated album catalog list.");
-		CatalogListUpdatedEvent event = new CatalogListUpdatedEvent(CollectionReader.readCollection(installation, response));
+		this.catalogList = CollectionReader.readCollection(installation, response);
+		CatalogListUpdatedEvent event = new CatalogListUpdatedEvent(this.catalogList);
 		if(callback != null) callback.accept(event);
 		eventService.publish(event);
 	}
@@ -355,9 +357,29 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
 		if(response == null) return;
 		statusService.showStatus("Updated recently launched solutions list.");
-		RecentlyLaunchedUpdatedEvent event = new RecentlyLaunchedUpdatedEvent(CollectionReader.readSolutionsList(response));
+		List<Solution> solutions = CollectionReader.readSolutionsList(response);
+		resolveCatalogs(solutions);
+		RecentlyLaunchedUpdatedEvent event = new RecentlyLaunchedUpdatedEvent(solutions);
 		if(callback != null) callback.accept(event);
 		eventService.publish(event);
+	}
+
+	private void resolveCatalogs(List<Solution> solutions) {
+		for(Solution solution : solutions) {
+			Catalog catalog = resolveCatalog(solution.getCatalogId());
+			if(catalog != null) {
+				solution.setCatalogName(catalog.getName());
+			}
+		}
+	}
+
+	private Catalog resolveCatalog(int catalog_id) {
+		for(Catalog catalog : catalogList) {
+			if(catalog.getId() == catalog_id) {
+				return catalog;
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -368,14 +390,16 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
 		if(response == null) return;
 		statusService.showStatus("Updated recently installed solutions list.");
-		RecentlyInstalledUpdatedEvent event = new RecentlyInstalledUpdatedEvent(CollectionReader.readSolutionsList(response));
+		List<Solution> solutions = CollectionReader.readSolutionsList(response);
+		resolveCatalogs(solutions);
+		RecentlyInstalledUpdatedEvent event = new RecentlyInstalledUpdatedEvent(solutions);
 		if(callback != null) callback.accept(event);
 		eventService.publish(event);
 	}
 
 	private void launch(AlbumInstallation installation, Solution solution, String actionName) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
-		String path = actionName + "/" + solution.getCatalog() + "/" + solution.getGroup() + "/" + solution.getName() + "/" + solution.getVersion();
+		String path = actionName + "/" + solution.getCatalogName() + "/" + solution.getGroup() + "/" + solution.getName() + "/" + solution.getVersion();
 		ObjectNode solutionArgs = mapper.createObjectNode();
 
 		if(solution.getArgs().size() > 0) {
@@ -511,7 +535,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 
 			Map<String, String> env = builder.environment();
 
-			env.put("ALBUM_DEFAULT_CATALOG", installation.getDefaultCatalog());
+//			env.put("ALBUM_DEFAULT_CATALOG", installation.getDefaultCatalog());
 			env.put("ALBUM_CONDA_PATH", condaPath.getAbsolutePath());
 
 			log.info("Server environment variables: " + env);

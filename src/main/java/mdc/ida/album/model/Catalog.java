@@ -1,7 +1,9 @@
 package mdc.ida.album.model;
 
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
@@ -13,8 +15,8 @@ public class Catalog extends ArrayList<Solution> {
 	private final StringProperty name = new SimpleStringProperty();
 	private final StringProperty path = new SimpleStringProperty();
 	private final StringProperty src = new SimpleStringProperty();
+	private final IntegerProperty id = new SimpleIntegerProperty();
 	private final BooleanProperty isLocal = new SimpleBooleanProperty();
-
 	public Catalog(AlbumInstallation parent) {
 		this.parent = parent;
 	}
@@ -58,4 +60,13 @@ public class Catalog extends ArrayList<Solution> {
 	public String getPath() {
 		return path.get();
 	}
+
+	public int getId() {
+		return id.get();
+	}
+
+	public void setId(int id) {
+		this.id.set(id);
+	}
+
 }

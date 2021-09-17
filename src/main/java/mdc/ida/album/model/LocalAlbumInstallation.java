@@ -14,10 +14,14 @@ public class LocalAlbumInstallation implements AlbumInstallation {
 	private boolean hasAlbumEnvironment;
 	private final InstallationTasks tasks;
 
-	public LocalAlbumInstallation(int port, String defaultCatalog) {
+	public LocalAlbumInstallation(int port) {
 		this.port = port;
-		this.defaultCatalog = defaultCatalog;
 		tasks = new InstallationTasks(this);
+	}
+
+	public LocalAlbumInstallation(int port, String defaultCatalog) {
+		this(port);
+		this.defaultCatalog = defaultCatalog;
 	}
 
 	@Override

@@ -1,27 +1,22 @@
 package mdc.ida.album.howto;
 
 import mdc.ida.album.AbstractHowto;
-import mdc.ida.album.DummyServer;
 import mdc.ida.album.Album;
-import mdc.ida.album.model.LocalInstallationLoadedEvent;
-import mdc.ida.album.model.SolutionCollection;
 import mdc.ida.album.model.CollectionUpdatedEvent;
-import mdc.ida.album.model.LocalAlbumInstallation;
+import mdc.ida.album.model.LocalInstallationLoadedEvent;
 import mdc.ida.album.model.Solution;
+import mdc.ida.album.model.SolutionCollection;
 
 import java.io.IOException;
 
 public class E02_DisplaySolution extends AbstractHowto {
 
 //	@Test
-	public void run() throws IOException {
-		// use dummy server to test launcher, otherwise connect to external album server launched from Python
-		int port = 1236;
-		server = DummyServer.launch(port);
+	public void run() {
 
 		// launch album
 		album = new Album();
-		album.launch("--port", String.valueOf(port));
+		album.launch();
 		album.loadLocalInstallation(this::installationLoaded);
 
 	}
@@ -42,7 +37,7 @@ public class E02_DisplaySolution extends AbstractHowto {
 		album.ui().show(firstSolution.getName(), firstSolution);
 	}
 
-	public static void main(String... args) throws IOException {
+	public static void main(String... args) {
 		new E02_DisplaySolution().run();
 	}
 }
