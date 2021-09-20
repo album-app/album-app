@@ -1,6 +1,7 @@
 package mdc.ida.album.scijava.ui.javafx.viewer;
 
 import javafx.scene.Node;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import mdc.ida.album.scijava.ui.javafx.JavaFXUI;
 import org.scijava.display.Display;
@@ -85,6 +86,8 @@ abstract public class EasyJavaFXDisplayViewer< T >
 			this.viewer = viewer;
 			window.setContent(this);
 			getChildren().add(panel);
+			VBox.setVgrow(this, Priority.ALWAYS);
+			VBox.setVgrow(panel, Priority.ALWAYS);
 		}
 
 		@Override
@@ -103,6 +106,7 @@ abstract public class EasyJavaFXDisplayViewer< T >
 		public void redoLayout()
 		{
 			viewer.redoLayout();
+			requestLayout();
 		}
 
 		@Override

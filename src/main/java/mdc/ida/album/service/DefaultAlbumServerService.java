@@ -3,17 +3,27 @@ package mdc.ida.album.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import mdc.ida.album.AlbumClient;
+import mdc.ida.album.DefaultValues;
+import mdc.ida.album.UITextValues;
+import mdc.ida.album.control.AlbumClient;
 import mdc.ida.album.io.CollectionReader;
 import mdc.ida.album.model.AlbumInstallation;
+import mdc.ida.album.model.Catalog;
+import mdc.ida.album.model.CatalogListUpdatedEvent;
 import mdc.ida.album.model.CollectionUpdatedEvent;
 import mdc.ida.album.model.LocalAlbumInstallation;
+import mdc.ida.album.model.LocalInstallationLoadedEvent;
+import mdc.ida.album.model.LogAddedEvent;
+import mdc.ida.album.model.LogEntry;
+import mdc.ida.album.model.RecentlyInstalledUpdatedEvent;
+import mdc.ida.album.model.RecentlyLaunchedUpdatedEvent;
 import mdc.ida.album.model.RemoteAlbumInstallation;
 import mdc.ida.album.model.ServerProperties;
-import mdc.ida.album.model.ServerThreadDoneEvent;
 import mdc.ida.album.model.Solution;
 import mdc.ida.album.model.SolutionArgument;
+import mdc.ida.album.model.SolutionCollection;
 import mdc.ida.album.model.SolutionLaunchRequestEvent;
+import mdc.ida.album.model.Task;
 import mdc.ida.album.service.conda.CondaExecutableMissingEvent;
 import mdc.ida.album.service.conda.CondaService;
 import mdc.ida.album.utils.StreamGobbler;
@@ -23,6 +33,7 @@ import org.scijava.Disposable;
 import org.scijava.app.StatusService;
 import org.scijava.command.DynamicCommandInfo;
 import org.scijava.command.Inputs;
+import org.scijava.display.DisplayService;
 import org.scijava.event.EventHandler;
 import org.scijava.event.EventService;
 import org.scijava.log.LogService;
@@ -38,10 +49,14 @@ import org.scijava.widget.FileWidget;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -51,7 +66,6 @@ import java.util.function.Consumer;
 @Plugin(type = Service.class)
 public class DefaultAlbumServerService extends AbstractService implements AlbumServerService, Disposable {
 
-	private final String ALBUM_ENVIRONMENT_NAME = "album";
 	@Parameter
 	private LogService log;
 
@@ -73,23 +87,24 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 	@Parameter
 	private CondaService condaService;
 
-	private final Map<AlbumInstallation, AlbumClient> clients = new HashMap<>();
+	@Parameter
+	private UIService uiService;
 
-	private static final String ALBUM_PREF_LOCAL_PORT = "album.local.port";
-	private static final String ALBUM_PREF_LOCAL_DEFAULT_CATALOG = "album.local.default_catalog";
-	private static final String ALBUM_DEFAULT_CATALOG_URL = "https://gitlab.com/ida-mdc/capture-knowledge";
+	@Parameter
+	private DisplayService displayService;
+
+	private final Map<AlbumInstallation, AlbumClient> clients = new HashMap<>();
 
 	private Thread serverThread;
 	final AtomicReference<Boolean> serverException = new AtomicReference<>(false);
-	private static final String environmentName = "album";
+	private SolutionCollection catalogList;
 
 	@Override
 	public LocalAlbumInstallation loadLocalInstallation() {
-		int port = prefService.getInt(DefaultAlbumServerService.class, ALBUM_PREF_LOCAL_PORT, 8080);
-		String catalog = prefService.get(DefaultAlbumServerService.class, ALBUM_PREF_LOCAL_DEFAULT_CATALOG, ALBUM_DEFAULT_CATALOG_URL);
+		int port = prefService.getInt(DefaultAlbumServerService.class, DefaultValues.ALBUM_PREF_LOCAL_PORT, 8080);
 		log.info("Local album installation: default port: " + port);
-		log.info("Local album installation: default catalog URL: " + catalog);
-		LocalAlbumInstallation installation = new LocalAlbumInstallation(port, catalog);
+//		log.info("Local album installation: default catalog URL: " + catalog);
+		LocalAlbumInstallation installation = new LocalAlbumInstallation(port);
 		File defaultCondaPath = condaService.getDefaultCondaPath();
 		if(defaultCondaPath != null) installation.setCondaPath(defaultCondaPath);
 		else {
@@ -116,13 +131,27 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		eventService.publish(event);
 	}
 
+	@Override
+	public void updateCatalogList(AlbumInstallation installation, Consumer<CatalogListUpdatedEvent> callback) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		String actionName = "catalogs";
+		AlbumClient client = getClient(installation);
+		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
+		if(response == null) return;
+		statusService.showStatus("Updated album catalog list.");
+		this.catalogList = CollectionReader.readCollection(installation, response);
+		CatalogListUpdatedEvent event = new CatalogListUpdatedEvent(this.catalogList);
+		if(callback != null) callback.accept(event);
+		eventService.publish(event);
+	}
+
 	private AlbumClient getClient(AlbumInstallation installation) {
 //		return clients.getOrDefault(installation, new AlbumClient(installation.getHost(), installation.getPort()));
 		return clients.get(installation);
 	}
 
 	@Override
-	public boolean checkIfRunning(LocalAlbumInstallation installation, Runnable callback) {
+	public boolean checkIfRunning(LocalAlbumInstallation installation, Consumer<LocalInstallationLoadedEvent> callback) {
 		AlbumClient client = getClient(installation);
 		if(client == null) {
 			installation.setServerRunning(false);
@@ -133,11 +162,12 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		try {
 			JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
 			boolean running = response != null;
+			installation.setServerRunning(running);
 			if(running) {
-				callback.run();
-				eventService.publish(new ServerThreadDoneEvent(true));
+				LocalInstallationLoadedEvent event = new LocalInstallationLoadedEvent(installation, true);
+				callback.accept(event);
+				eventService.publish(event);
 			}
-			installation.setServerRunning(true);
 			return running;
 		} catch (AlbumClient.ServerNotAvailableException | IOException e) {
 			installation.setServerRunning(false);
@@ -154,16 +184,24 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 	}
 
 	@Override
+	public void runWithChecks(LocalAlbumInstallation installation, Consumer<LocalInstallationLoadedEvent> callback) {
+		if(checkIfCondaInstalled(installation)
+				&& checkIfAlbumEnvironmentExists(installation)) {
+			runAsynchronously(installation, callback);
+		}
+	}
+
+	@Override
 	public boolean checkIfAlbumEnvironmentExists(LocalAlbumInstallation installation) {
-		boolean exists = condaService.checkIfEnvironmentExists(installation.getCondaPath(), ALBUM_ENVIRONMENT_NAME);
+		boolean exists = condaService.checkIfEnvironmentExists(installation.getCondaPath(), DefaultValues.ALBUM_ENVIRONMENT_NAME);
 		installation.setHasAlbumEnvironment(exists);
 		return exists;
 	}
 
 	@Override
-	public void runAsynchronously(LocalAlbumInstallation installation, Runnable callback) {
+	public void runAsynchronously(LocalAlbumInstallation installation, Consumer<LocalInstallationLoadedEvent> callback) {
 		String condaExecutable = condaService.getCondaExecutable(installation.getCondaPath());
-		String environmentPath = condaService.getEnvironmentPath(installation.getCondaPath(), environmentName);
+		String environmentPath = condaService.getEnvironmentPath(installation.getCondaPath(), DefaultValues.ALBUM_ENVIRONMENT_NAME);
 		if(new File(condaExecutable).exists()) {
 			serverThread = new ServerThread(installation, installation.getCondaPath(), environmentPath);
 			serverThread.start();
@@ -243,18 +281,22 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 
 	@Override
 	public String getAlbumEnvironmentPath(LocalAlbumInstallation installation) {
-		return condaService.getEnvironmentPath(installation.getCondaPath(), environmentName);
+		return condaService.getEnvironmentPath(installation.getCondaPath(), DefaultValues.ALBUM_ENVIRONMENT_NAME);
 	}
 
 	@Override
-	public void launchSolution(AlbumInstallation installation, Solution solution, String action) {
+	public void launchSolution(AlbumInstallation installation, Solution solution, String action) throws IOException {
 		launch(installation, solution, action);
 	}
 
 	@EventHandler
 	private void launchSolution(SolutionLaunchRequestEvent event) {
 		new Thread(() -> {
-			launchSolution(event.getInstallation(), event.getSolution(), event.getAction());
+			try {
+				launchSolution(event.getInstallation(), event.getSolution(), event.getAction());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}).start();
 	}
 
@@ -279,13 +321,85 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 
 	@Override
 	public void removeAlbumEnvironment(LocalAlbumInstallation installation) throws IOException, InterruptedException {
-		condaService.removeEnvironment(installation.getCondaPath(), environmentName);
+		condaService.removeEnvironment(installation.getCondaPath(), DefaultValues.ALBUM_ENVIRONMENT_NAME);
 		FileUtils.deleteDirectory(new File(getAlbumEnvironmentPath(installation)));
 	}
 
-	private void launch(AlbumInstallation installation, Solution solution, String actionName) {
+	@Override
+	public void removeCatalog(AlbumInstallation installation, Catalog catalog) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
-		String path = solution.getCatalog() + "/" + solution.getGroup() + "/" + solution.getName() + "/" + solution.getVersion() + "/" + actionName;
+		AlbumClient client = getClient(installation);
+		String pathEncoded = URLEncoder.encode(catalog.getPath(), StandardCharsets.UTF_8.toString());
+		ObjectNode solutionArgs = mapper.createObjectNode();
+		solutionArgs.put("path", pathEncoded);
+		JsonNode response = client.send(client.createAlbumRequest(mapper, "remove-catalog", solutionArgs));
+		//TODO handle response
+		updateCatalogList(installation, e -> {});
+	}
+
+	@Override
+	public void addCatalog(AlbumInstallation installation, String urlOrPath) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		AlbumClient client = getClient(installation);
+		String pathEncoded = URLEncoder.encode(urlOrPath, StandardCharsets.UTF_8.toString());
+		ObjectNode solutionArgs = mapper.createObjectNode();
+		solutionArgs.put("path", pathEncoded);
+		JsonNode response = client.send(client.createAlbumRequest(mapper, "add-catalog", solutionArgs));
+		//TODO handle response
+		updateCatalogList(installation, e -> {});
+	}
+
+	@Override
+	public void updateRecentlyLaunchedSolutionsList(LocalAlbumInstallation installation, Consumer<RecentlyLaunchedUpdatedEvent> callback) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		String actionName = "recently-launched";
+		AlbumClient client = getClient(installation);
+		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
+		if(response == null) return;
+		statusService.showStatus("Updated recently launched solutions list.");
+		List<Solution> solutions = CollectionReader.readSolutionsList(response);
+		resolveCatalogs(solutions);
+		RecentlyLaunchedUpdatedEvent event = new RecentlyLaunchedUpdatedEvent(solutions);
+		if(callback != null) callback.accept(event);
+		eventService.publish(event);
+	}
+
+	private void resolveCatalogs(List<Solution> solutions) {
+		for(Solution solution : solutions) {
+			Catalog catalog = resolveCatalog(solution.getCatalogId());
+			if(catalog != null) {
+				solution.setCatalogName(catalog.getName());
+			}
+		}
+	}
+
+	private Catalog resolveCatalog(int catalog_id) {
+		for(Catalog catalog : catalogList) {
+			if(catalog.getId() == catalog_id) {
+				return catalog;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void updateRecentlyInstalledSolutionsList(LocalAlbumInstallation installation, Consumer<RecentlyInstalledUpdatedEvent> callback) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		String actionName = "recently-installed";
+		AlbumClient client = getClient(installation);
+		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
+		if(response == null) return;
+		statusService.showStatus("Updated recently installed solutions list.");
+		List<Solution> solutions = CollectionReader.readSolutionsList(response);
+		resolveCatalogs(solutions);
+		RecentlyInstalledUpdatedEvent event = new RecentlyInstalledUpdatedEvent(solutions);
+		if(callback != null) callback.accept(event);
+		eventService.publish(event);
+	}
+
+	private void launch(AlbumInstallation installation, Solution solution, String actionName) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		String path = actionName + "/" + solution.getCatalogName() + "/" + solution.getGroup() + "/" + solution.getName() + "/" + solution.getVersion();
 		ObjectNode solutionArgs = mapper.createObjectNode();
 
 		if(solution.getArgs().size() > 0) {
@@ -301,13 +415,63 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 			}
 		}
 		System.out.println("launching " + solution.getGroup() + ":" + solution.getName() + ":" + solution.getVersion() + "...");
-		try {
-			AlbumClient client = getClient(installation);
-			JsonNode response = client.send(client.createAlbumRequest(mapper, path, solutionArgs));
-			//TODO handle response if there is one
-		} catch (IOException e) {
-			e.printStackTrace();
+		AlbumClient client = getClient(installation);
+		JsonNode response = client.send(client.createAlbumRequest(mapper, path, solutionArgs));
+		int taskId = response.get("id").asInt();
+		if(displayService.getDisplay(UITextValues.TASKS_TAB_NAME) == null) uiService.show(UITextValues.TASKS_TAB_NAME, installation.getTasks());
+		handleNewTask(installation, solution, taskId);
+	}
+
+	private void handleNewTask(AlbumInstallation installation, Solution solution, int taskId) {
+		Task task = new Task(taskId, solution);
+		installation.getTasks().put(taskId, task);
+		eventService.publish(new LogAddedEvent(task, List.of()));
+		//TODO make sure new task is selected in tasks tab
+		Timer timer = new Timer();
+		TimerTask timerTask = new TimerTask() {
+			public void run() {
+				try {
+					List<LogEntry> newLogs = getNewLogs(installation, task);
+					eventService.publish(new LogAddedEvent(task, newLogs));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				if(task.status == Task.Status.FINISHED) {
+					timer.cancel();
+				}
+			}
+		};
+		timer.schedule(timerTask, DefaultValues.TASK_UPDATE_INTERVAL, DefaultValues.TASK_UPDATE_INTERVAL);
+	}
+
+	private List<LogEntry> getNewLogs(AlbumInstallation installation, Task task) throws IOException {
+		AlbumClient client = getClient(installation);
+		JsonNode resRequest = client.send(client.createAlbumRequest(new ObjectMapper(), "status/" + task.getId()));
+		System.out.println(resRequest);
+		String status = resRequest.get("status").asText();
+		JsonNode records = resRequest.get("records");
+		List<LogEntry> res = new ArrayList<>();
+		if(status.equals("WAITING")) task.setStatus(Task.Status.WAITING);
+		if(status.equals("RUNNING")) task.setStatus(Task.Status.RUNNING);
+		if(status.equals("FINISHED")) task.setStatus(Task.Status.FINISHED);
+		for (JsonNode record : records) {
+			String ascTime = record.get("asctime").asText();
+			String name = record.get("name").asText();
+			String levelName = record.get("levelname").asText();
+			String msg = record.get("msg").asText();
+			boolean logFound = false;
+			for (LogEntry taskLog : task.getLogs()) {
+				if (taskLog.getAscTime().equals(ascTime) && taskLog.getMsg().equals(msg)) {
+					logFound = true;
+					break;
+				}
+			}
+			if(logFound) continue;
+			LogEntry logEntry = new LogEntry(msg, ascTime, name, levelName);
+			task.getLogs().add(logEntry);
+			res.add(logEntry);
 		}
+		return res;
 	}
 
 	private ModuleItem<?> createModuleItem(DynamicCommandInfo info, SolutionArgument arg) {
@@ -352,7 +516,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 			try {
 				tryToStartServer(installation, condaPath, environmentPath);
 			} catch (IOException | InterruptedException e) {
-				eventService.publish(new ServerThreadDoneEvent(e));
+				eventService.publish(new LocalInstallationLoadedEvent(installation, e));
 			}
 		}
 
@@ -362,7 +526,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 			String[] command;
 			String commandInCondaEnv = "run --no-capture-output --prefix " + environmentPath + " "
 					+ (SystemUtils.IS_OS_WINDOWS ? new File(environmentPath, "python").getAbsolutePath() + " -m " : "")
-					+ "hips server --port " + installation.getPort();
+					+ "album server --port " + installation.getPort();
 			command = condaService.createCondaCommand(condaPath, commandInCondaEnv);
 
 			log().info(Arrays.toString(command));
@@ -371,8 +535,8 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 
 			Map<String, String> env = builder.environment();
 
-			env.put("HIPS_DEFAULT_CATALOG", installation.getDefaultCatalog());
-			env.put("HIPS_CONDA_PATH", condaPath.getAbsolutePath());
+//			env.put("ALBUM_DEFAULT_CATALOG", installation.getDefaultCatalog());
+			env.put("ALBUM_CONDA_PATH", condaPath.getAbsolutePath());
 
 			log.info("Server environment variables: " + env);
 
@@ -393,7 +557,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 							super.handleLog(line);
 						} catch (RuntimeException e) {
 							serverException.set(true);
-							eventService.publish(new ServerThreadDoneEvent(e));
+							eventService.publish(new LocalInstallationLoadedEvent(installation, e));
 						}
 					}
 				}

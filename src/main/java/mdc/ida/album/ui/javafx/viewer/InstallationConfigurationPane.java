@@ -1,19 +1,24 @@
 package mdc.ida.album.ui.javafx.viewer;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.StringBinding;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -21,56 +26,52 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-import javafx.stage.Stage;
+import mdc.ida.album.DefaultValues;
+import mdc.ida.album.UITextValues;
 import mdc.ida.album.model.ServerProperties;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 
+import static mdc.ida.album.ui.javafx.viewer.JavaFXUtils.createExpandable;
+import static mdc.ida.album.ui.javafx.viewer.JavaFXUtils.createStatefulExpandable;
+import static mdc.ida.album.ui.javafx.viewer.JavaFXUtils.createStatusBinding;
+import static mdc.ida.album.ui.javafx.viewer.JavaFXUtils.makePretty;
 import static mdc.ida.album.ui.javafx.viewer.LocalAlbumInstallationDisplayViewer.createFileChooserAction;
-import static mdc.ida.album.ui.javafx.viewer.LocalAlbumInstallationDisplayViewer.getStatusText;
 
-public class InstallationConfigurationWindow extends Stage {
+public class InstallationConfigurationPane extends VBox {
 
 	private final InstallationState installationState;
-	private final int spacing = 15;
 	private VBox serverPropertiesBox;
 
-	public InstallationConfigurationWindow(InstallationState installationState) {
+	public InstallationConfigurationPane(InstallationState installationState) {
 		this.installationState = installationState;
-		VBox content = new VBox(
+		getChildren().addAll(
 				createCondaStatus(),
 				createAlbumEnvironmentStatus(),
 				createAlbumServerStatus(),
+				new Separator(),
 				createLauncherProperties(),
 				updateServerProperties());
 
-		content.setSpacing(spacing);
-		content.setPadding(new Insets(spacing));
-		HBox.setHgrow(content,Priority.ALWAYS);
+		setSpacing(DefaultValues.UI_SPACING);
+		setBackground(Background.EMPTY);
+		VBox.setVgrow(this, Priority.ALWAYS);
+		HBox.setHgrow(this, Priority.ALWAYS);
 
 		installationState.albumRunningProperty().addListener((observable, oldValue, newValue) -> {
 			updateServerProperties();
 		});
-
-		ScrollPane root = new ScrollPane(content);
-		root.setFitToWidth(true);
-		Scene secondScene = new Scene(root, 700, 500);
-
-		setTitle("album configuration");
-		setScene(secondScene);
-		show();
-	}
+}
 
 	private Node createLauncherProperties() {
 		VBox res = new VBox(
-				createTitle("Launcher properties"),
-				addResettableLine("Conda location", installationState.getCondaPath(), this::resetCondaPath, null),
-				addResettableLine("album environment location", installationState.getAlbumEnvironmentPath(), null, this::deleteEnvironment)
+				addResettableLine(UITextValues.INSTALLATION_CONDA_PATH_LABEL, installationState.getCondaPath(), this::resetCondaPath, null),
+				addResettableLine(UITextValues.INSTALLATION_ALBUM_ENVIRONMENT_PATH_LABEL, installationState.getAlbumEnvironmentPath(), null, this::deleteEnvironment)
 		);
 		makePretty(res);
-		return res;
+		return createExpandable(UITextValues.INSTALLATION_LAUNCHER_PROPERTIES_TITLE, res);
 	}
 
 	private void deleteEnvironment() {
@@ -84,19 +85,16 @@ public class InstallationConfigurationWindow extends Stage {
 
 	private Node updateServerProperties() {
 		if(serverPropertiesBox != null) {
-			serverPropertiesBox.getChildren().remove(1, serverPropertiesBox.getChildren().size());
+			serverPropertiesBox.getChildren().clear();
 		} else {
-			serverPropertiesBox = new VBox(
-				createTitle("Server properties")
-			);
+			serverPropertiesBox = new VBox();
 			makePretty(serverPropertiesBox);
-
 		}
 		try {
 			ServerProperties serverProperties = installationState.getServerProperties();
 			if(serverProperties != null) {
 				serverProperties.forEach((name, value) -> {
-					if(!new File(value).exists()) return;
+//					if(!new File(value).exists()) return;
 					serverPropertiesBox.getChildren().add(addResettableLine(name, value, null, () -> {
 						try {
 							FileUtils.deleteDirectory(new File(value));
@@ -109,7 +107,7 @@ public class InstallationConfigurationWindow extends Stage {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return serverPropertiesBox;
+		return createExpandable(UITextValues.INSTALLATION_SERVER_PROPERTIES_TITLE, serverPropertiesBox);
 	}
 
 	private Node createTitle(String title) {
@@ -128,15 +126,15 @@ public class InstallationConfigurationWindow extends Stage {
 				nameLabel,
 				valueLabel
 		);
-		box.setSpacing(spacing);
+		box.setSpacing(DefaultValues.UI_SPACING);
 		HBox.setHgrow(box, Priority.ALWAYS);
 		if(onReset != null) {
-			Button btn = new Button("reset");
+			Button btn = new Button(UITextValues.INSTALLATION_RESET_BTN);
 			btn.setOnAction(e -> onReset.run());
 			box.getChildren().add(btn);
 		}
 		if(onDelete != null) {
-			Button btn = new Button("delete");
+			Button btn = new Button(UITextValues.INSTALLATION_DELETE_BTN);
 			btn.setOnAction(e -> onDelete.run());
 			box.getChildren().add(btn);
 		}
@@ -148,8 +146,7 @@ public class InstallationConfigurationWindow extends Stage {
 	}
 
 	private Node createAlbumEnvironmentStatus() {
-		Text statusText = getStatusText(installationState.hasAlbumEnvironmentProperty(), "album environment exists", "album environment does not exist");
-		Button btn = new Button("Create Environment");
+		Button btn = new Button(UITextValues.INSTALLATION_CREATE_ENVIRONMENT_BTN);
 		btn.setOnAction(event -> {
 			new Thread(() -> {
 				try {
@@ -162,27 +159,13 @@ public class InstallationConfigurationWindow extends Stage {
 		btn.disableProperty().bind(Bindings.createBooleanBinding(
 				() -> !installationState.isCondaInstalled() || installationState.isHasAlbumEnvironment(),
 				installationState.condaInstalledProperty(), installationState.hasAlbumEnvironmentProperty()));
-		return createStatusActionBox(statusText, btn);
-	}
-
-	private HBox createStatusActionBox(Text statusText, Button btn) {
-		HBox res = new HBox(statusText, createHorizontalSpacer(), btn);
-		HBox.setHgrow(res, Priority.ALWAYS);
-		makePretty(res);
-		return res;
-	}
-
-	private Region createHorizontalSpacer() {
-		Region spacer = new Region();
-		spacer.setPrefWidth(10);
-		spacer.setPrefHeight(10);
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-		return spacer;
+		StringBinding titleBinding = createStatusBinding(installationState.hasAlbumEnvironmentProperty(), "album environment exists", "album environment does not exist");
+		VBox expandable = makePretty(new VBox(btn));
+		return createStatefulExpandable(titleBinding, installationState.hasAlbumEnvironmentProperty(), expandable);
 	}
 
 	private Node createAlbumServerStatus() {
-		Text statusText = getStatusText(installationState.albumRunningProperty(), "album server running", "album server not running");
-		Button startAlbumButton = new Button("Start album server");
+		Button startAlbumButton = new Button(UITextValues.INSTALLATION_START_ALBUM_SERVER_BTN);
 		startAlbumButton.disableProperty().bind(Bindings.createBooleanBinding(
 				() -> !installationState.condaInstalledProperty().get()
 						|| !installationState.hasAlbumEnvironmentProperty().get()
@@ -191,35 +174,27 @@ public class InstallationConfigurationWindow extends Stage {
 				installationState.albumRunningProperty(),
 				installationState.hasAlbumEnvironmentProperty()));
 		startAlbumButton.setOnAction(event -> installationState.runServer());
-		return createStatusActionBox(statusText, startAlbumButton);
+		VBox expandable = makePretty(new VBox(startAlbumButton));
+		StringBinding binding = createStatusBinding(installationState.albumRunningProperty(), "album server running", "album server not running");
+		return createStatefulExpandable(binding, installationState.albumRunningProperty(), expandable);
 	}
 
 	private Node createCondaStatus() {
-		Text title = getStatusText(installationState.condaInstalledProperty(), "Conda is accessible", "Conda is not accessible");
-		RadioButton downloadConda = new RadioButton("Download Miniconda to..");
-		RadioButton useExistingConda = new RadioButton("Use existing conda:");
+		RadioButton downloadConda = new RadioButton(UITextValues.INSTALLATION_DOWNLOAD_CONDA_BTN);
+		RadioButton useExistingConda = new RadioButton(UITextValues.INSTALLATION_EXISTING_CONDA_BTN);
 		downloadConda.setSelected(installationState.getInstallation().getCondaPath() == null);
 		useExistingConda.setSelected(installationState.getInstallation().getCondaPath() != null);
 		ToggleGroup group = new ToggleGroup();
 		group.getToggles().add(downloadConda);
 		group.getToggles().add(useExistingConda);
-		VBox res = new VBox(title, downloadCondaBox(downloadConda), existingCondaBox(useExistingConda));
-		makePretty(res);
-		return res;
-	}
-
-	private void makePretty(VBox res) {
-		res.setSpacing(spacing);
-		res.setPadding(new Insets(spacing));
-		res.setBackground(new Background(new BackgroundFill(new Color(1.0, 1.0, 1.0, 0.5), new CornerRadii(10), Insets.EMPTY)));
-		VBox.setVgrow(res, Priority.ALWAYS);
-	}
-
-	private void makePretty(HBox res) {
-		res.setSpacing(spacing);
-		res.setPadding(new Insets(spacing));
-		res.setBackground(new Background(new BackgroundFill(new Color(1.0, 1.0, 1.0, 0.5), new CornerRadii(10), Insets.EMPTY)));
-		VBox.setVgrow(res, Priority.ALWAYS);
+		VBox expandable = makePretty(
+				new VBox(downloadCondaBox(downloadConda), existingCondaBox(useExistingConda))
+		);
+		StringBinding binding = createStatusBinding(
+				installationState.condaInstalledProperty(),
+				UITextValues.CONFIGURATION_CONDA_ACCESSIBLE,
+				UITextValues.CONFIGURATION_CONDA_NOT_ACCESSIBLE);
+		return createStatefulExpandable(binding, installationState.condaInstalledProperty(), expandable);
 	}
 
 	private HBox existingCondaBox(RadioButton useExistingConda) {

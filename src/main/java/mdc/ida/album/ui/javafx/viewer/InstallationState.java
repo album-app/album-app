@@ -7,7 +7,7 @@ import javafx.beans.property.StringProperty;
 import mdc.ida.album.model.CollectionUpdatedEvent;
 import mdc.ida.album.model.LocalAlbumInstallation;
 import mdc.ida.album.model.ServerProperties;
-import mdc.ida.album.model.ServerThreadDoneEvent;
+import mdc.ida.album.model.LocalInstallationLoadedEvent;
 import mdc.ida.album.service.AlbumServerService;
 import mdc.ida.album.service.conda.CondaEnvironmentDetectedEvent;
 import mdc.ida.album.service.conda.CondaExecutableMissingEvent;
@@ -34,7 +34,7 @@ public class InstallationState {
 	@Parameter
 	private LogService logService;
 
-	private LocalAlbumInstallation installation;
+	private final LocalAlbumInstallation installation;
 	private final BooleanProperty albumRunning = new SimpleBooleanProperty(false);
 	private final BooleanProperty condaInstalled = new SimpleBooleanProperty(false);
 	private final BooleanProperty condaMissing = new SimpleBooleanProperty(false);
@@ -54,8 +54,19 @@ public class InstallationState {
 	}
 
 	@EventHandler
-	private void albumServerThreadDone(ServerThreadDoneEvent e) {
+	private void albumServerThreadDone(LocalInstallationLoadedEvent e) {
 		albumRunning.set(e.isSuccess());
+		if(e.isSuccess()) {
+			new Thread(() -> {
+				try {
+					albumService.updateCatalogList(installation, null);
+					albumService.updateRecentlyLaunchedSolutionsList(installation, null);
+					albumService.updateRecentlyInstalledSolutionsList(installation, null);
+				} catch (IOException ioException) {
+					ioException.printStackTrace();
+				}
+			}).start();
+		}
 	}
 
 	@EventHandler
@@ -172,12 +183,16 @@ public class InstallationState {
 		condaService.setDefaultCondaPath(path);
 	}
 
-	String getCondaPath() {
+	public String getCondaPath() {
 		String condaPath = "";
 		if(installation.getCondaPath() != null && installation.getCondaPath().exists()) {
 			condaPath = installation.getCondaPath().getAbsolutePath();
 		}
 		return condaPath;
+	}
+
+	String getCondaExecutable() {
+		return condaService.getCondaExecutable(installation.getCondaPath());
 	}
 
 	void downloadAndInstallConda(StringProperty downloadTarget) throws IOException {

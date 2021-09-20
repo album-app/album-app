@@ -1,9 +1,10 @@
 package mdc.ida.album;
 
 import mdc.ida.album.model.Catalog;
-import mdc.ida.album.model.SolutionCollection;
 import mdc.ida.album.model.LocalAlbumInstallation;
-import mdc.ida.album.model.ServerThreadDoneEvent;
+import mdc.ida.album.model.LocalInstallationLoadedEvent;
+import mdc.ida.album.model.SolutionCollection;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ public class AlbumIntegrationTest {
 	File folder;
 
 	private Album album;
-	private CompletableFuture<ServerThreadDoneEvent> futureAlbumServerThread;
+	private CompletableFuture<LocalInstallationLoadedEvent> futureAlbumServerThread;
 
 	@BeforeEach
 	void setUp() {
@@ -40,6 +41,12 @@ public class AlbumIntegrationTest {
 	@AfterEach
 	void tearDown() {
 		album.dispose();
+
+		try {
+			FileUtils.deleteDirectory(folder.toPath().toFile());
+		} catch (IOException e) {
+			// ignore
+		}
 	}
 
 	@Test
@@ -79,7 +86,7 @@ public class AlbumIntegrationTest {
 		futureAlbumServerThread = new CompletableFuture<>();
 		album.event().subscribe(this);
 		album.server().runAsynchronously(installation);
-		ServerThreadDoneEvent serverThreadDone = futureAlbumServerThread.get();
+		LocalInstallationLoadedEvent serverThreadDone = futureAlbumServerThread.get();
 
 		assertTrue(serverThreadDone.isSuccess());
 		assertTrue(album.server().checkIfRunning(installation));
@@ -101,7 +108,7 @@ public class AlbumIntegrationTest {
 	}
 
 	@EventHandler
-	void albumServerDone(ServerThreadDoneEvent e) {
+	void albumServerDone(LocalInstallationLoadedEvent e) {
 		futureAlbumServerThread.complete(e);
 	}
 }

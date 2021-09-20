@@ -5,4 +5,5 @@ public interface AlbumInstallation {
 	void launch();
 	String getHost();
 	int getPort();
+	InstallationTasks getTasks();
 }

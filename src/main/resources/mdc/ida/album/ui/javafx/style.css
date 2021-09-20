@@ -28,3 +28,83 @@
 .bold {
     -fx-font-weight: bold;
 }
+
+.tab-pane.installation-tabpane .tab-header-area .tab-header-background {
+    -fx-opacity: 0;
+}
+
+.tab-pane.installation-tabpane
+{
+    -fx-tab-min-width:30px;
+    -fx-tab-max-width:30px;
+    -fx-tab-min-height:120px;
+    -fx-tab-max-height:120px;
+    -fx-background-color: #e6e6e6;
+}
+
+.tab-pane.installation-tabpane .tab{
+    -fx-background-insets: 0 1 0 1,0,0;
+    -fx-background-color: #e6e6e6;
+    -fx-margin-bottom: 10px;
+}
+
+.tab-pane.installation-tabpane .tab:selected {
+    -fx-background-color: #ffffff;
+}
+
+.tab-pane.installation-tabpane .tab .tab-label {
+    -fx-text-fill: #828282;
+    -fx-font-size: 12px;
+}
+
+.tab-pane.installation-tabpane .tab:selected .tab-label {
+    -fx-text-fill: #000000;
+}
+
+.installation-contentpane {
+    -fx-background-color: #ffffff;
+}
+
+.transparent.scroll-pane{
+   -fx-background-color:transparent;
+    -fx-border-style: none none none none;
+}
+
+.transparent.scroll-pane > .viewport {
+   -fx-background-color: transparent;
+}
+
+.state-icon {
+    -fx-min-width: 35px;
+    -fx-max-width: 35px;
+    -fx-font-size: 150%;
+}
+
+.state-happy {
+    -fx-text-fill: green;
+}
+
+.state-unhappy {
+    -fx-text-fill: red;
+}
+
+.my-catalogs, .recently-launched {
+    -fx-border-style: solid;
+    -fx-border-color: #d1d1d3;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.noheader .column-header-background {
+    -fx-max-height: 0;
+    -fx-pref-height: 0;
+    -fx-min-height: 0;
+}
+
+.table-view {
+  -fx-table-cell-border-color: transparent;
+}
+
+.table-view .table-column {
+    -fx-alignment: CENTER-LEFT;
+}

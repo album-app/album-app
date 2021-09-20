@@ -12,9 +12,15 @@ public class LocalAlbumInstallation implements AlbumInstallation {
 	private boolean condaInstalled; // conda executable exists
 	private boolean condaMissing; // conda
 	private boolean hasAlbumEnvironment;
+	private final InstallationTasks tasks;
+
+	public LocalAlbumInstallation(int port) {
+		this.port = port;
+		tasks = new InstallationTasks(this);
+	}
 
 	public LocalAlbumInstallation(int port, String defaultCatalog) {
-		this.port = port;
+		this(port);
 		this.defaultCatalog = defaultCatalog;
 	}
 
@@ -36,6 +42,11 @@ public class LocalAlbumInstallation implements AlbumInstallation {
 	@Override
 	synchronized public int getPort() {
 		return port;
+	}
+
+	@Override
+	public InstallationTasks getTasks() {
+		return tasks;
 	}
 
 	public File getCondaPath() {
