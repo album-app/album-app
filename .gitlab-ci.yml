@@ -70,13 +70,13 @@ windows_deploy:
       - build/jpackage/*.msi
 
 
-.macos_test:
+macos_test:
   extends: .macos_base_template
   stage: test
   script:
     - $tmpdir/gradle/gradle-7.2/bin/gradle clean test
 
-.macos_deploy:
+macos_deploy:
   extends: .macos_base_template
   stage: deploy
   script:
