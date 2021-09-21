@@ -39,9 +39,6 @@ stages:
     - source $tmpdir/miniconda/bin/activate
     - conda activate album-app
     - conda install openjdk=11.0.6
-    - curl -k -L -v -X GET https://services.gradle.org/distributions/gradle-6.8.3-bin.zip > $tmpdir/gradle-6.8.3-bin.zip
-    - unzip -d $tmpdir/gradle $tmpdir/gradle-6.8.3-bin.zip
-    - ls $tmpdir/gradle/gradle-6.8.3
   tags:
     - macos
     - shell
@@ -74,13 +71,13 @@ macos_test:
   extends: .macos_base_template
   stage: test
   script:
-    - $tmpdir/gradle/gradle-7.2/bin/gradle clean test
+    - ./gradlew clean test --no-daemon
 
 macos_deploy:
   extends: .macos_base_template
   stage: deploy
   script:
-    - $tmpdir/gradle/gradle-7.2/bin/gradle jlinkZip
+    - ./gradlew jlinkZip --no-daemon
 #    - $tmpdir/gradle/gradle-7.2/bin/gradle -PjpackageInstallerType="pkg" jpackage
 #    - $tmpdir/gradle/gradle-7.2/bin/gradle -PjpackageInstallerType="dmg" jpackage
   artifacts:
@@ -98,7 +95,7 @@ ubuntu_deploy:
   stage: deploy
   script:
 #    - sudo apt-get install binutils fakeroot
-    - gradle jlinkZip
+    - ./gradlew jlinkZip --no-daemon
 #    - gradle -PjpackageInstallerType="deb" jpackage
   artifacts:
     paths:
