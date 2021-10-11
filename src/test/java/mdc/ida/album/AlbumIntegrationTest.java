@@ -2,7 +2,7 @@ package mdc.ida.album;
 
 import mdc.ida.album.model.Catalog;
 import mdc.ida.album.model.LocalAlbumInstallation;
-import mdc.ida.album.model.LocalInstallationLoadedEvent;
+import mdc.ida.album.model.event.LocalInstallationLoadedEvent;
 import mdc.ida.album.model.SolutionCollection;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -93,7 +93,7 @@ public class AlbumIntegrationTest {
 		assertTrue(installation.isServerRunning());
 
 		CompletableFuture<SolutionCollection> futureCollectionReturned = new CompletableFuture<>();
-		album.server().updateIndex(installation, e -> futureCollectionReturned.complete(e.getCollection()));
+		album.server().index(installation, e -> futureCollectionReturned.complete(e.getCollection()));
 		SolutionCollection collection = futureCollectionReturned.get();
 		assertNotNull(collection);
 		assertTrue(collection.size() > 0);

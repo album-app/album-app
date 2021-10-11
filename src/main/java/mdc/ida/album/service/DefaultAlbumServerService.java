@@ -9,20 +9,24 @@ import mdc.ida.album.control.AlbumClient;
 import mdc.ida.album.io.CollectionReader;
 import mdc.ida.album.model.AlbumInstallation;
 import mdc.ida.album.model.Catalog;
-import mdc.ida.album.model.CatalogListUpdatedEvent;
-import mdc.ida.album.model.CollectionUpdatedEvent;
+import mdc.ida.album.model.CollectionUpdates;
+import mdc.ida.album.model.event.CatalogListEvent;
+import mdc.ida.album.model.event.CollectionIndexEvent;
 import mdc.ida.album.model.LocalAlbumInstallation;
-import mdc.ida.album.model.LocalInstallationLoadedEvent;
+import mdc.ida.album.model.event.CollectionUpgradeEvent;
+import mdc.ida.album.model.event.CollectionUpgradePreviewEvent;
+import mdc.ida.album.model.event.LocalInstallationLoadedEvent;
 import mdc.ida.album.model.LogAddedEvent;
 import mdc.ida.album.model.LogEntry;
-import mdc.ida.album.model.RecentlyInstalledUpdatedEvent;
-import mdc.ida.album.model.RecentlyLaunchedUpdatedEvent;
+import mdc.ida.album.model.event.RecentlyInstalledUpdatedEvent;
+import mdc.ida.album.model.event.RecentlyLaunchedUpdatedEvent;
 import mdc.ida.album.model.RemoteAlbumInstallation;
 import mdc.ida.album.model.ServerProperties;
 import mdc.ida.album.model.Solution;
 import mdc.ida.album.model.SolutionArgument;
 import mdc.ida.album.model.SolutionCollection;
-import mdc.ida.album.model.SolutionLaunchRequestEvent;
+import mdc.ida.album.model.event.SolutionLaunchFinishedEvent;
+import mdc.ida.album.model.event.SolutionLaunchRequestEvent;
 import mdc.ida.album.model.Task;
 import mdc.ida.album.service.conda.CondaExecutableMissingEvent;
 import mdc.ida.album.service.conda.CondaService;
@@ -36,6 +40,7 @@ import org.scijava.command.Inputs;
 import org.scijava.display.DisplayService;
 import org.scijava.event.EventHandler;
 import org.scijava.event.EventService;
+import org.scijava.event.SciJavaEvent;
 import org.scijava.log.LogService;
 import org.scijava.module.DefaultMutableModuleItem;
 import org.scijava.module.ModuleItem;
@@ -119,20 +124,20 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 	}
 
 	@Override
-	public void updateIndex(LocalAlbumInstallation installation, Consumer<CollectionUpdatedEvent> callback) throws IOException {
+	public void index(LocalAlbumInstallation installation, Consumer<CollectionIndexEvent> callback) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "index";
 		AlbumClient client = getClient(installation);
 		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
 		if(response == null) return;
 		statusService.showStatus("Updated album collection.");
-		CollectionUpdatedEvent event = new CollectionUpdatedEvent(CollectionReader.readCollection(installation, response));
+		CollectionIndexEvent event = new CollectionIndexEvent(CollectionReader.readCollection(installation, response));
 		callback.accept(event);
 		eventService.publish(event);
 	}
 
 	@Override
-	public void updateCatalogList(AlbumInstallation installation, Consumer<CatalogListUpdatedEvent> callback) throws IOException {
+	public void catalogList(AlbumInstallation installation, Consumer<CatalogListEvent> callback) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "catalogs";
 		AlbumClient client = getClient(installation);
@@ -140,7 +145,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		if(response == null) return;
 		statusService.showStatus("Updated album catalog list.");
 		this.catalogList = CollectionReader.readCollection(installation, response);
-		CatalogListUpdatedEvent event = new CatalogListUpdatedEvent(this.catalogList);
+		CatalogListEvent event = new CatalogListEvent(this.catalogList);
 		if(callback != null) callback.accept(event);
 		eventService.publish(event);
 	}
@@ -237,7 +242,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
 		if(response == null) return;
 		statusService.showStatus("Added catalog " + urlOrPath + " to album collection.");
-		CollectionUpdatedEvent event = new CollectionUpdatedEvent(CollectionReader.readCollection(installation, response));
+		CollectionIndexEvent event = new CollectionIndexEvent(CollectionReader.readCollection(installation, response));
 		eventService.publish(event);
 	}
 
@@ -334,7 +339,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		solutionArgs.put("path", pathEncoded);
 		JsonNode response = client.send(client.createAlbumRequest(mapper, "remove-catalog", solutionArgs));
 		//TODO handle response
-		updateCatalogList(installation, e -> {});
+		catalogList(installation, e -> {});
 	}
 
 	@Override
@@ -346,11 +351,11 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		solutionArgs.put("path", pathEncoded);
 		JsonNode response = client.send(client.createAlbumRequest(mapper, "add-catalog", solutionArgs));
 		//TODO handle response
-		updateCatalogList(installation, e -> {});
+		catalogList(installation, e -> {});
 	}
 
 	@Override
-	public void updateRecentlyLaunchedSolutionsList(LocalAlbumInstallation installation, Consumer<RecentlyLaunchedUpdatedEvent> callback) throws IOException {
+	public void updateRecentlyLaunchedSolutionsList(AlbumInstallation installation, Consumer<RecentlyLaunchedUpdatedEvent> callback) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "recently-launched";
 		AlbumClient client = getClient(installation);
@@ -383,7 +388,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 	}
 
 	@Override
-	public void updateRecentlyInstalledSolutionsList(LocalAlbumInstallation installation, Consumer<RecentlyInstalledUpdatedEvent> callback) throws IOException {
+	public void updateRecentlyInstalledSolutionsList(AlbumInstallation installation, Consumer<RecentlyInstalledUpdatedEvent> callback) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "recently-installed";
 		AlbumClient client = getClient(installation);
@@ -397,12 +402,52 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		eventService.publish(event);
 	}
 
+	@Override
+	public void update(AlbumInstallation installation) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		String actionName = "update";
+		AlbumClient client = getClient(installation);
+		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
+		if(response == null) return;
+		statusService.showStatus("Updated collection.");
+	}
+
+	@Override
+	public void upgradeDryRun(AlbumInstallation installation, Consumer<CollectionUpgradePreviewEvent> callback) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode solutionArgs = mapper.createObjectNode();
+		solutionArgs.put("dry_run", true);
+		String actionName = "upgrade";
+		AlbumClient client = getClient(installation);
+		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName, solutionArgs));
+		if(response == null) return;
+		CollectionUpdates updates = CollectionReader.readUpdates(installation, response);
+		CollectionUpgradePreviewEvent upgradeEvent = new CollectionUpgradePreviewEvent(updates);
+		eventService.publish(upgradeEvent);
+		callback.accept(upgradeEvent);
+		statusService.showStatus("Done upgrading collection (dry run).");
+	}
+
+	@Override
+	public void upgrade(AlbumInstallation installation, Consumer<CollectionUpgradeEvent> callback) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		String actionName = "upgrade";
+		AlbumClient client = getClient(installation);
+		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
+		if(response == null) return;
+		CollectionUpdates updates = CollectionReader.readUpdates(installation, response);
+		CollectionUpgradeEvent upgradeEvent = new CollectionUpgradeEvent(updates);
+		eventService.publish(upgradeEvent);
+		callback.accept(upgradeEvent);
+		statusService.showStatus("Done upgrading collection.");
+	}
+
 	private void launch(AlbumInstallation installation, Solution solution, String actionName) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String path = actionName + "/" + solution.getCatalogName() + "/" + solution.getGroup() + "/" + solution.getName() + "/" + solution.getVersion();
 		ObjectNode solutionArgs = mapper.createObjectNode();
 
-		if(solution.getArgs().size() > 0) {
+		if(actionName.equals("run") && solution.getArgs().size() > 0) {
 			System.out.println("Harvesting inputs for " + solution.getGroup() + ":" + solution.getName() + ":" + solution.getVersion() + "...");
 			Inputs inputs = new Inputs(getContext());
 			for (SolutionArgument arg : solution.getArgs()) {
@@ -419,10 +464,10 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		JsonNode response = client.send(client.createAlbumRequest(mapper, path, solutionArgs));
 		int taskId = response.get("id").asInt();
 		if(displayService.getDisplay(UITextValues.TASKS_TAB_NAME) == null) uiService.show(UITextValues.TASKS_TAB_NAME, installation.getTasks());
-		handleNewTask(installation, solution, taskId);
+		handleNewTask(installation, solution, taskId, actionName);
 	}
 
-	private void handleNewTask(AlbumInstallation installation, Solution solution, int taskId) {
+	private void handleNewTask(AlbumInstallation installation, Solution solution, int taskId, String actionName) {
 		Task task = new Task(taskId, solution);
 		installation.getTasks().put(taskId, task);
 		eventService.publish(new LogAddedEvent(task, List.of()));
@@ -438,6 +483,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 				}
 				if(task.status == Task.Status.FINISHED) {
 					timer.cancel();
+					eventService.publish(new SolutionLaunchFinishedEvent(installation, solution, actionName));
 				}
 			}
 		};

@@ -1,9 +1,10 @@
 package mdc.ida.album;
 
 public class UITextValues {
+	public static final String INSTALLATION_TITLE = "Welcome";
 	public static final String INSTALLATION_COLLECTION_TAB = "My collection";
-	public static final String INSTALLATION_SYSTEM_TAB = "installation";
-	public static final String INSTALLATION_AUTHOR_TAB = "write solutions";
+	public static final String INSTALLATION_SYSTEM_TAB = "Installation";
+	public static final String INSTALLATION_AUTHOR_TAB = "Write solutions";
 	public static final String INSTALLATION_INITIALIZING_LABEL = "Checking album configuration..";
 	public static final String INSTALLATION_SETUP_RUNNING_LABEL = "Initial setup running..";
 	public static final String INSTALLATION_STARTING_SETUP_INTRO_LABEL = "Ready to set up album?";
@@ -54,7 +55,8 @@ public class UITextValues {
 	public static final String COLLECTION_SOLUTIONS_LIST_PLACEHOLDER = "No catalog selected or no solutions in catalog";
 	public static final String INSTALLATION_RECENTLY_INSTALLED_TITLE = "Recently installed";
 	public static final String INSTALLATION_RECENTLY_LAUNCHED_TITLE = "Recently launched";
-	public static final String SOLUTION_LIST_INSTALL_BTN = "Install";
+	public static final String SOLUTION_LIST_INSTALL_BTN = " Install ";
+	public static final String SOLUTION_LIST_UNINSTALL_BTN = "Uninstall";
 	public static final String SOLUTION_LIST_RUN_BTN = "Run";
 	public static final String SOLUTION_VIEW_CATALOG_LABEL = "Catalog: ";
 	public static final String SOLUTION_VIEW_CITE_LABEL = "Citation";
@@ -72,6 +74,21 @@ public class UITextValues {
 	public static final String SOLUTION_VIEW_INSTALL_BTN = "Install solution";
 	public static final String SOLUTION_VIEW_RUN_BTN = "Run solution";
 	public static final String TASKS_TAB_NAME = "Tasks";
+	public static final String UPDATES_TAB_NAME = "Updates";
+	public static final String UPDATES_LIST_HEADER_CATALOG_NAME = "Catalog";
+	public static final String UPDATES_LIST_HEADER_COORDINATES = "Solution";
+	public static final String UPDATES_LIST_HEADER_ACTION = "Action";
+	public static final String UPDATES_LIST_HEADER_CHANGELOG = "Changelog";
+	public static final String UPDATES_ACTIONS_APPLY_BTN = "Apply updates";
+	public static final String COLLECTION_UP_TO_DATE_LABEL = "✔ Collection up to date. ";
+	public static final String COLLECTION_UPDATE_BTN = "Check for updates";
+	public static final String STATUS_WARNING_ICON = "⚠ ";
+	public static final String STATUS_SUCCESSFUL_ICON = "✔ ";
+	public static final String STATUS_ALBUM_ENVIRONMENT_FOUND = "Album environment located.";
+	public static final String STATUS_CONDA_MISSING = "Conda is missing.";
+	public static final String STATUS_ALBUM_RUNNING = "album running.";
+	public static final String STATUS_ALBUM_ENVIRONMENT_MISSING = "album environment is missing";
+	public static final String COLLECTION_CATALOGS_TITLE = "My catalogs";
 
 	public static String getActivateEnvironmentCode(String condaIncludePath, String condaEnvironmentPath) {
 		return "PATH=\"" + condaIncludePath + ":$PATH\" conda activate " + condaEnvironmentPath;

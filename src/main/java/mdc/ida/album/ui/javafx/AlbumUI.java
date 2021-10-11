@@ -1,11 +1,17 @@
 package mdc.ida.album.ui.javafx;
 
 import javafx.application.Platform;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import org.scijava.Priority;
 import org.scijava.display.Display;
+import org.scijava.display.DisplayService;
+import org.scijava.display.event.window.WinClosedEvent;
+import org.scijava.event.EventService;
+import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.AbstractUserInterface;
 import org.scijava.ui.DialogPrompt;
@@ -32,6 +38,9 @@ public class AlbumUI extends AbstractUserInterface implements JavaFXUI {
 	private JavaFXStatusBar statusBar;
 	private JavaFXConsolePane consolePane;
 	private JavaFXClipboard systemClipboard;
+
+	@Parameter
+	EventService eventService;
 
 	@Override
 	protected void createUI() {
@@ -79,7 +88,9 @@ public class AlbumUI extends AbstractUserInterface implements JavaFXUI {
 		AlbumDisplayWindow window = new AlbumDisplayWindow();
 		Platform.runLater(() -> {
 			getApplicationFrame().getTabPane().getTabs().add(window);
+			getApplicationFrame().getTabPane().getSelectionModel().select(window);
 		});
+		window.setOnCloseRequest((event) -> eventService.publish(new WinClosedEvent(display, window)));
 		return window;
 	}
 

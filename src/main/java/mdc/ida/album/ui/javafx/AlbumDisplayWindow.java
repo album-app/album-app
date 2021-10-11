@@ -5,6 +5,7 @@ import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import mdc.ida.album.ui.javafx.viewer.LocalAlbumInstallationDisplay;
@@ -66,7 +67,8 @@ public class AlbumDisplayWindow extends Tab implements DisplayWindow {
 			handler.handle(null);
 		} else {
 			Platform.runLater(() -> {
-				getTabPane().getTabs().remove(this);
+				TabPane tabPane = getTabPane();
+				if(tabPane != null) tabPane.getTabs().remove(this);
 			});
 		}
 	}

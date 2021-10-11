@@ -1,5 +1,6 @@
 package mdc.ida.album.ui.javafx.viewer;
 
+import javafx.beans.binding.Bindings;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -11,8 +12,7 @@ import javafx.scene.layout.VBox;
 import mdc.ida.album.UITextValues;
 import mdc.ida.album.model.AlbumInstallation;
 import mdc.ida.album.model.Catalog;
-import mdc.ida.album.model.CatalogListUpdatedEvent;
-import mdc.ida.album.model.LocalAlbumInstallation;
+import mdc.ida.album.model.event.CatalogListEvent;
 import mdc.ida.album.model.SolutionCollection;
 import mdc.ida.album.service.AlbumServerService;
 import org.scijava.Context;
@@ -81,7 +81,7 @@ public class CatalogListView extends VBox {
 	}
 
 	@EventHandler
-	private void catalogListUpdated(CatalogListUpdatedEvent e) {
+	private void catalogListUpdated(CatalogListEvent e) {
 		catalogList.getItems().clear();
 		e.getCollection().forEach(catalogList.getItems()::add);
 	}

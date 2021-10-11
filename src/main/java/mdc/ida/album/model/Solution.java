@@ -1,7 +1,9 @@
 package mdc.ida.album.model;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -23,6 +25,9 @@ public class Solution {
 	private final StringProperty license = new SimpleStringProperty();
 	private final StringProperty author = new SimpleStringProperty();
 	private final StringProperty cite = new SimpleStringProperty();
+	private final BooleanProperty installed = new SimpleBooleanProperty();
+	private final BooleanProperty blocked = new SimpleBooleanProperty();
+	private final StringProperty blockedMessage = new SimpleStringProperty();
 	private final ListProperty<String> tags = new SimpleListProperty<>();
 	private List<SolutionArgument> args;
 	private AlbumInstallation installation;
@@ -197,5 +202,43 @@ public class Solution {
 
 	public void setCatalogId(int catalogId) {
 		this.catalogId.set(catalogId);
+	}
+
+	public boolean isInstalled() {
+		return installed.get();
+	}
+
+	public BooleanProperty installedProperty() {
+		return installed;
+	}
+
+	public void setInstalled(boolean installed) {
+		this.installed.set(installed);
+	}
+
+	public boolean isBlocked() {
+		return blocked.get();
+	}
+
+	public BooleanProperty blockedProperty() {
+		return blocked;
+	}
+
+	public String getBlockedMessage() {
+		return blockedMessage.get();
+	}
+
+	public StringProperty blockedMessageProperty() {
+		return blockedMessage;
+	}
+
+	public void block(String message) {
+		this.blocked.set(true);
+		this.blockedMessage.set(message);
+	}
+
+	public void unblock() {
+		this.blocked.set(false);
+		this.blockedMessage.set("");
 	}
 }

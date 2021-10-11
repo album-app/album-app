@@ -1,7 +1,7 @@
 package mdc.ida.album;
 
 import mdc.ida.album.model.LocalAlbumInstallation;
-import mdc.ida.album.model.LocalInstallationLoadedEvent;
+import mdc.ida.album.model.event.LocalInstallationLoadedEvent;
 import mdc.ida.album.model.RemoteAlbumInstallation;
 import mdc.ida.album.scijava.ui.javafx.JavaFXService;
 import mdc.ida.album.service.AlbumServerService;
@@ -63,7 +63,7 @@ public class Album extends AbstractGateway {
 		LocalAlbumInstallation localInstallation = albumService.loadLocalInstallation();
 		if(options.port().isPresent()) localInstallation.setPort(options.port().get());
 		if(!ui().isHeadless()) {
-			ui().show("Welcome", localInstallation);
+			ui().show(UITextValues.INSTALLATION_TITLE, localInstallation);
 		}
 		albumService.runWithChecks(localInstallation, callback);
 	}

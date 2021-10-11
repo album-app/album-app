@@ -5,6 +5,10 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import mdc.ida.album.model.AlbumInstallation;
 import mdc.ida.album.model.Catalog;
+import mdc.ida.album.model.CatalogUpdate;
+import mdc.ida.album.model.CollectionUpdates;
+import mdc.ida.album.model.Coordinates;
+import mdc.ida.album.model.LocalAlbumInstallation;
 import mdc.ida.album.model.Solution;
 import mdc.ida.album.model.SolutionArgument;
 import mdc.ida.album.model.SolutionCollection;
@@ -56,6 +60,7 @@ public class CollectionReader {
 		setStringAttr(node, solution::setLicense, "license");
 		setStringAttr(node, solution::setAuthor, "authors");
 		setStringAttr(node, solution::setTitle, "title");
+		setBooleanAttr(node, solution::setInstalled, "installed");
 		List<SolutionArgument> albumArgs = new ArrayList<>();
 		JsonNode args = node.get("args");
 		if(args != null) {
@@ -75,6 +80,13 @@ public class CollectionReader {
 		JsonNode jsonNode = arg.get(fieldName);
 		if(jsonNode != null && (jsonNode.isTextual() || jsonNode.isNumber())) {
 			consumer.accept(jsonNode.asText());
+		}
+	}
+
+	private static void setBooleanAttr(JsonNode arg, Consumer<Boolean> consumer, String fieldName) {
+		JsonNode jsonNode = arg.get(fieldName);
+		if(jsonNode != null) {
+			consumer.accept(jsonNode.asBoolean());
 		}
 	}
 
@@ -113,5 +125,30 @@ public class CollectionReader {
 			res.add(solution);
 		}
 		return res;
+	}
+
+	public static CollectionUpdates readUpdates(AlbumInstallation installation, JsonNode node) {
+		CollectionUpdates collectionUpdates = new CollectionUpdates(installation);
+		for (JsonNode catalogChangesNode : node.get("changes")) {
+			String catalog = catalogChangesNode.get("catalog").get("name").asText();
+			List<CatalogUpdate> updates = new ArrayList<>();
+			for (JsonNode changeNode : catalogChangesNode.get("solution_changes")) {
+				updates.add(readChange(changeNode));
+			}
+			collectionUpdates.put(catalog, updates);
+		}
+		return collectionUpdates;
+	}
+
+	private static CatalogUpdate readChange(JsonNode changeNode) {
+		return new CatalogUpdate(
+				new Coordinates(
+						changeNode.get("group").asText(),
+						changeNode.get("name").asText(),
+						changeNode.get("version").asText()
+				),
+				CatalogUpdate.Action.valueOf(changeNode.get("change_type").asText()),
+				changeNode.get("change_log").asText()
+		);
 	}
 }

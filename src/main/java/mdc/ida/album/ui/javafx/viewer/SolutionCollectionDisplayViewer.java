@@ -1,5 +1,6 @@
 package mdc.ida.album.ui.javafx.viewer;
 
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
