@@ -24,17 +24,22 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import mdc.ida.album.DefaultValues;
 import mdc.ida.album.UITextValues;
-import mdc.ida.album.model.CollectionUpdatedEvent;
+import mdc.ida.album.model.CatalogUpdate;
+import mdc.ida.album.model.CollectionUpdates;
+import mdc.ida.album.model.event.CollectionIndexEvent;
 import mdc.ida.album.model.LocalAlbumInstallation;
 import mdc.ida.album.model.SolutionCollection;
+import mdc.ida.album.model.event.CollectionUpgradeEvent;
 import mdc.ida.album.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
 import org.scijava.Context;
+import org.scijava.event.EventHandler;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
@@ -42,6 +47,7 @@ import org.scijava.ui.viewer.DisplayViewer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static mdc.ida.album.DefaultValues.UI_SPACING;
@@ -61,6 +67,7 @@ public class LocalAlbumInstallationDisplayViewer extends EasyJavaFXDisplayViewer
 	private UIService uiService;
 
 	private InstallationState installationState;
+	private Label updateStatusLabel;
 
 	public LocalAlbumInstallationDisplayViewer() {
 		super(LocalAlbumInstallation.class);
@@ -75,13 +82,20 @@ public class LocalAlbumInstallationDisplayViewer extends EasyJavaFXDisplayViewer
 	protected Node createDisplayPanel(LocalAlbumInstallation installation) {
 		installationState = new InstallationState(installation);
 		context.inject(installationState);
+		Tab collectionTab = createCollectionTab();
 		TabPane content = createTabPane(
 				createSystemTab(),
-				createCollectionTab(),
+				collectionTab,
 				createAuthorTab(installationState)
 		);
+		content.getSelectionModel().select(collectionTab);
 		content.setPadding(new Insets(5));
 		return content;
+	}
+
+	@EventHandler
+	private void updatesApplied(CollectionUpgradeEvent e) {
+		updateStatusLabel.setText(UITextValues.COLLECTION_UP_TO_DATE_LABEL);
 	}
 
 	private Tab createAuthorTab(InstallationState installationState) {
@@ -100,11 +114,113 @@ public class LocalAlbumInstallationDisplayViewer extends EasyJavaFXDisplayViewer
 		makePretty(contentRight);
 		HBox.setHgrow(contentRight, Priority.ALWAYS);
 		HBox content = makePretty(new HBox(contentLeft, contentRight));
-		return createLocalInstallationTab(content, UITextValues.INSTALLATION_COLLECTION_TAB);
+		content.disableProperty().bind(Bindings.createBooleanBinding(
+				() -> !installationState.isAlbumRunning(), installationState.albumRunningProperty()));
+		VBox tabContent = new VBox(createInstallationStatusbar(), content);
+		return createLocalInstallationTab(tabContent, UITextValues.INSTALLATION_COLLECTION_TAB);
+	}
+
+	private Node createInstallationStatusbar() {
+		final Pane spacer = new Pane();
+		HBox.setHgrow(spacer, Priority.ALWAYS);
+		spacer.setMinSize(10, 1);
+		HBox res = new HBox(
+				createInstallationStatusLabel(),
+				spacer,
+				createUpdateBtn()
+		);
+		res.setPadding(new Insets(UI_SPACING/2.));
+		res.setBackground(new Background(
+				new BackgroundFill(new Color(0.9, 0.9, 0.9, 1.0), new CornerRadii(0), Insets.EMPTY)));
+		return res;
+	}
+
+	private Node createUpdateBtn() {
+		updateStatusLabel = new Label();
+		Button res = new Button(UITextValues.COLLECTION_UPDATE_BTN);
+		res.setDisable(true);
+		res.setPrefHeight(42);
+		res.setPadding(new Insets(5));
+		installationState.albumRunningProperty().addListener((observable, oldValue, newValue) -> {
+			res.setDisable(!newValue);
+		});
+		res.setOnAction(event -> {
+			try {
+				installationState.startUpdate(upgradePreviewEvent -> {
+					CollectionUpdates updates = upgradePreviewEvent.getUdpates();
+					boolean updatesFound = false;
+					for (List<CatalogUpdate> catalogUpdates : updates.values()) {
+						if (catalogUpdates.size() > 0) {
+							updatesFound = true;
+							break;
+						}
+					}
+					if(!updatesFound) {
+						updateStatusLabel.setText(UITextValues.COLLECTION_UP_TO_DATE_LABEL);
+					} else {
+						updateStatusLabel.setText("");
+						uiService.show(UITextValues.UPDATES_TAB_NAME, updates);
+					}
+				});
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
+		HBox box = new HBox(updateStatusLabel, res);
+		box.setFillHeight(true);
+		box.setAlignment(Pos.CENTER_RIGHT);
+		return box;
+	}
+
+	private Node createInstallationStatusLabel() {
+		Label textLabel = new Label();
+		Label iconLabel = new Label();
+		if(installationState.isAlbumRunning()) {
+			textLabel.setText(UITextValues.STATUS_ALBUM_RUNNING);
+			iconLabel.getStyleClass().add("icon-ok");
+			iconLabel.setText(UITextValues.STATUS_SUCCESSFUL_ICON);
+		} else {
+			if(installationState.isCondaMissing()) {
+				textLabel.setText(UITextValues.STATUS_CONDA_MISSING);
+				iconLabel.setText(UITextValues.STATUS_WARNING_ICON);
+				iconLabel.getStyleClass().add("icon-warning");
+			} else {
+				if(!installationState.isHasAlbumEnvironment()) {
+					textLabel.setText(UITextValues.STATUS_ALBUM_ENVIRONMENT_MISSING);
+					iconLabel.setText(UITextValues.STATUS_WARNING_ICON);
+					iconLabel.getStyleClass().add("icon-warning");
+				}
+			}
+		}
+		installationState.albumRunningProperty().addListener((observable, oldValue, newValue) -> {
+			if(newValue) {
+				textLabel.setText(UITextValues.STATUS_ALBUM_RUNNING);
+				iconLabel.setText(UITextValues.STATUS_SUCCESSFUL_ICON);
+				iconLabel.getStyleClass().add("icon-ok");
+			}
+		});
+		installationState.condaMissingProperty().addListener((observable, oldValue, newValue) -> {
+			if(newValue) {
+				textLabel.setText(UITextValues.STATUS_CONDA_MISSING);
+				iconLabel.setText(UITextValues.STATUS_WARNING_ICON);
+				iconLabel.getStyleClass().add("icon-warning");
+			}
+		});
+		installationState.hasAlbumEnvironmentProperty().addListener((observable, oldValue, newValue) -> {
+			if(newValue) {
+				textLabel.setText(UITextValues.STATUS_ALBUM_ENVIRONMENT_FOUND);
+				iconLabel.setText(UITextValues.STATUS_SUCCESSFUL_ICON);
+				iconLabel.getStyleClass().add("icon-ok");
+			}
+		});
+		HBox box = new HBox(iconLabel, textLabel);
+		box.setFillHeight(true);
+		box.setAlignment(Pos.CENTER_RIGHT);
+		return box;
 	}
 
 	private Node createManageCatalogsSection() {
-		Label label = new Label("My catalogs");
+		Label label = new Label(UITextValues.COLLECTION_CATALOGS_TITLE);
 		VBox box = new VBox(label, new CatalogListView(context, installationState.getInstallation()));
 		box.getStyleClass().add("my-catalogs");
 		VBox.setVgrow(box, Priority.ALWAYS);
@@ -340,7 +456,7 @@ public class LocalAlbumInstallationDisplayViewer extends EasyJavaFXDisplayViewer
 		}
 	}
 
-	private void collectionUpdated(CollectionUpdatedEvent event) {
+	private void collectionUpdated(CollectionIndexEvent event) {
 		SolutionCollection collection = event.getCollection();
 		uiService.show(UITextValues.COLLECTION_DISPLAY_NAME, collection);
 	}

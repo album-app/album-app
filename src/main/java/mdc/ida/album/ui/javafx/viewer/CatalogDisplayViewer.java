@@ -16,7 +16,7 @@ import javafx.scene.layout.VBox;
 import mdc.ida.album.UITextValues;
 import mdc.ida.album.model.Catalog;
 import mdc.ida.album.model.Solution;
-import mdc.ida.album.model.SolutionLaunchRequestEvent;
+import mdc.ida.album.model.event.SolutionLaunchRequestEvent;
 import mdc.ida.album.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
 import org.scijava.Context;
 import org.scijava.command.CommandService;

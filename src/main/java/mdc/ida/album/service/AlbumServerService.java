@@ -2,12 +2,14 @@ package mdc.ida.album.service;
 
 import mdc.ida.album.model.AlbumInstallation;
 import mdc.ida.album.model.Catalog;
-import mdc.ida.album.model.CatalogListUpdatedEvent;
-import mdc.ida.album.model.CollectionUpdatedEvent;
+import mdc.ida.album.model.event.CatalogListEvent;
+import mdc.ida.album.model.event.CollectionIndexEvent;
 import mdc.ida.album.model.LocalAlbumInstallation;
-import mdc.ida.album.model.LocalInstallationLoadedEvent;
-import mdc.ida.album.model.RecentlyInstalledUpdatedEvent;
-import mdc.ida.album.model.RecentlyLaunchedUpdatedEvent;
+import mdc.ida.album.model.event.CollectionUpgradeEvent;
+import mdc.ida.album.model.event.CollectionUpgradePreviewEvent;
+import mdc.ida.album.model.event.LocalInstallationLoadedEvent;
+import mdc.ida.album.model.event.RecentlyInstalledUpdatedEvent;
+import mdc.ida.album.model.event.RecentlyLaunchedUpdatedEvent;
 import mdc.ida.album.model.RemoteAlbumInstallation;
 import mdc.ida.album.model.ServerProperties;
 import mdc.ida.album.model.Solution;
@@ -25,8 +27,8 @@ public interface AlbumServerService extends SciJavaService {
 	}
 	boolean checkIfRunning(LocalAlbumInstallation installation, Consumer<LocalInstallationLoadedEvent> callbackIfRunning);
 	void launchSolution(AlbumInstallation installation, Solution solution, String action) throws IOException;
-	void updateIndex(LocalAlbumInstallation installation, Consumer<CollectionUpdatedEvent> callback) throws IOException;
-	void updateCatalogList(AlbumInstallation installation, Consumer<CatalogListUpdatedEvent> callback) throws IOException;
+	void index(LocalAlbumInstallation installation, Consumer<CollectionIndexEvent> callback) throws IOException;
+	void catalogList(AlbumInstallation installation, Consumer<CatalogListEvent> callback) throws IOException;
 	boolean checkIfAlbumEnvironmentExists(LocalAlbumInstallation installation);
 	default void runAsynchronously(LocalAlbumInstallation installation) {
 		runAsynchronously(installation, e -> {});
@@ -53,6 +55,11 @@ public interface AlbumServerService extends SciJavaService {
 	void removeCatalog(AlbumInstallation installation, Catalog catalog) throws IOException;
 	void addCatalog(AlbumInstallation installation, String urlOrPath) throws IOException;
 
-	void updateRecentlyLaunchedSolutionsList(LocalAlbumInstallation installation, Consumer<RecentlyLaunchedUpdatedEvent> callback) throws IOException;
-	void updateRecentlyInstalledSolutionsList(LocalAlbumInstallation installation, Consumer<RecentlyInstalledUpdatedEvent> callback) throws IOException;
+	void updateRecentlyLaunchedSolutionsList(AlbumInstallation installation, Consumer<RecentlyLaunchedUpdatedEvent> callback) throws IOException;
+	void updateRecentlyInstalledSolutionsList(AlbumInstallation installation, Consumer<RecentlyInstalledUpdatedEvent> callback) throws IOException;
+
+	void update(AlbumInstallation installation) throws IOException;
+
+	void upgrade(AlbumInstallation installation, Consumer<CollectionUpgradeEvent> callback) throws IOException;
+	void upgradeDryRun(AlbumInstallation installation, Consumer<CollectionUpgradePreviewEvent> callback) throws IOException;
 }

@@ -3,7 +3,7 @@ package mdc.ida.album.ui.javafx.viewer;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.VBox;
 import mdc.ida.album.model.AlbumInstallation;
-import mdc.ida.album.model.RecentlyLaunchedUpdatedEvent;
+import mdc.ida.album.model.event.RecentlyLaunchedUpdatedEvent;
 import mdc.ida.album.model.Solution;
 import org.scijava.Context;
 import org.scijava.event.EventHandler;

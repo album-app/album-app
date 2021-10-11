@@ -10,7 +10,7 @@ import javafx.scene.text.Text;
 import mdc.ida.album.DefaultValues;
 import mdc.ida.album.UITextValues;
 import mdc.ida.album.model.Solution;
-import mdc.ida.album.model.SolutionLaunchRequestEvent;
+import mdc.ida.album.model.event.SolutionLaunchRequestEvent;
 import mdc.ida.album.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
 import org.scijava.Context;
 import org.scijava.event.EventService;
@@ -54,27 +54,32 @@ public class SolutionDisplayViewer extends EasyJavaFXDisplayViewer<Solution> {
 		Node authors = getText(solution.getAuthors(), UITextValues.SOLUTION_VIEW_AUTHORS_LABEL, UITextValues.SOLUTION_VIEW_AUTHORS_PLACEHOLDER);
 		Node documentation = getText(solution.getDocumentation(), UITextValues.SOLUTION_VIEW_DOCUMENTATION_LABEL, UITextValues.SOLUTION_VIEW_DOCUMENTATION_PLACEHOLDER);
 		Node license = getText(solution.getLicense(), UITextValues.SOLUTION_VIEW_LICENSE_LABEL, UITextValues.SOLUTION_VIEW_LICENSE_PLACEHOLDER);
-		VBox content = new VBox(title, idText, description, citation, authors, license, documentation);
 		Text catalogInfo = new Text(UITextValues.SOLUTION_VIEW_CATALOG_LABEL + solution.getCatalogName());
+		VBox content = new VBox(title, idText, description, citation, authors, license, documentation);
+		content.setSpacing(UI_SPACING);
+		content.setPadding(new Insets(UI_SPACING));
+		VBox.setVgrow(content, Priority.ALWAYS);
+		HBox.setHgrow(content, Priority.ALWAYS);
+		VBox actions = createActions(solution, catalogInfo);
+		HBox res = new HBox(content, actions);
+		res.setSpacing(UI_SPACING);
+		res.setPadding(new Insets(UI_SPACING));
+		return res;
+	}
+
+	private VBox createActions(Solution solution, Text catalogInfo) {
 		Button installBtn = new Button(UITextValues.SOLUTION_VIEW_INSTALL_BTN);
 		installBtn.setOnAction(e -> eventService.publish(new SolutionLaunchRequestEvent(solution.getInstallation(), solution, "install")));
 		Button runBtn = new Button(UITextValues.SOLUTION_VIEW_RUN_BTN);
 		runBtn.setOnAction(e -> eventService.publish(new SolutionLaunchRequestEvent(solution.getInstallation(), solution, "run")));
 		runBtn.setMaxWidth(Double.MAX_VALUE);
 		installBtn.setMaxWidth(Double.MAX_VALUE);
-		content.setSpacing(UI_SPACING);
-		content.setPadding(new Insets(UI_SPACING));
-		VBox.setVgrow(content, Priority.ALWAYS);
-		HBox.setHgrow(content, Priority.ALWAYS);
 		VBox actions = new VBox(catalogInfo, installBtn, runBtn);
 		actions.getStyleClass().add("recently-launched");
 		actions.setSpacing(UI_SPACING);
 		actions.setPadding(new Insets(UI_SPACING));
 		VBox.setVgrow(actions, Priority.ALWAYS);
-		HBox res = new HBox(content, actions);
-		res.setSpacing(UI_SPACING);
-		res.setPadding(new Insets(UI_SPACING));
-		return res;
+		return actions;
 	}
 
 	private Text getText(String content, String label, String placeholder) {

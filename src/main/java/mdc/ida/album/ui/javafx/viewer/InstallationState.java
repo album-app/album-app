@@ -4,10 +4,11 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import mdc.ida.album.model.CollectionUpdatedEvent;
+import mdc.ida.album.model.event.CollectionIndexEvent;
 import mdc.ida.album.model.LocalAlbumInstallation;
 import mdc.ida.album.model.ServerProperties;
-import mdc.ida.album.model.LocalInstallationLoadedEvent;
+import mdc.ida.album.model.event.CollectionUpgradePreviewEvent;
+import mdc.ida.album.model.event.LocalInstallationLoadedEvent;
 import mdc.ida.album.service.AlbumServerService;
 import mdc.ida.album.service.conda.CondaEnvironmentDetectedEvent;
 import mdc.ida.album.service.conda.CondaExecutableMissingEvent;
@@ -59,7 +60,7 @@ public class InstallationState {
 		if(e.isSuccess()) {
 			new Thread(() -> {
 				try {
-					albumService.updateCatalogList(installation, null);
+					albumService.catalogList(installation, null);
 					albumService.updateRecentlyLaunchedSolutionsList(installation, null);
 					albumService.updateRecentlyInstalledSolutionsList(installation, null);
 				} catch (IOException ioException) {
@@ -210,8 +211,8 @@ public class InstallationState {
 		}
 	}
 
-	public void updateIndex(Consumer<CollectionUpdatedEvent> collectionUpdated) throws IOException {
-		albumService.updateIndex(installation, collectionUpdated);
+	public void updateIndex(Consumer<CollectionIndexEvent> collectionUpdated) throws IOException {
+		albumService.index(installation, collectionUpdated);
 	}
 
 	public void createEnvironment() throws IOException, InterruptedException {
@@ -259,5 +260,10 @@ public class InstallationState {
 
 	public void resetCondaPath() {
 		condaService.removeDefaultCondaPath();
+	}
+
+	public void startUpdate(Consumer<CollectionUpgradePreviewEvent> callback) throws IOException {
+		albumService.update(this.installation);
+		albumService.upgradeDryRun(this.installation, callback);
 	}
 }

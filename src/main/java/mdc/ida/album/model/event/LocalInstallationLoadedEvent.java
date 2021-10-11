@@ -1,5 +1,6 @@
-package mdc.ida.album.model;
+package mdc.ida.album.model.event;
 
+import mdc.ida.album.model.LocalAlbumInstallation;
 import org.scijava.event.SciJavaEvent;
 
 public class LocalInstallationLoadedEvent extends SciJavaEvent {

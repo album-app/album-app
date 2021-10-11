@@ -1,5 +1,7 @@
-package mdc.ida.album.model;
+package mdc.ida.album.model.event;
 
+import mdc.ida.album.model.AlbumInstallation;
+import mdc.ida.album.model.Solution;
 import org.scijava.event.SciJavaEvent;
 
 public class SolutionLaunchRequestEvent extends SciJavaEvent {

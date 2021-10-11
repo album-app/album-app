@@ -108,3 +108,16 @@
 .table-view .table-column {
     -fx-alignment: CENTER-LEFT;
 }
+
+.icon-ok, .icon-warning {
+    -fx-font-size: 120%;
+    -fx-font-weight: bold;
+}
+
+.icon-ok {
+    -fx-color: green;
+}
+
+.icon-warning {
+    -fx-color: red;
+}

@@ -10,6 +10,7 @@ module mdc.ida.album {
 	opens mdc.ida.album.scijava.ui.javafx to org.scijava;
 	opens mdc.ida.album.scijava.ui.javafx.viewer to org.scijava;
 	opens mdc.ida.album.scijava.ui.javafx.widget to org.scijava;
+	opens mdc.ida.album.model.event to javafx.base;
 	requires org.scijava;
 	requires javafx.graphics;
 	requires javafx.controls;

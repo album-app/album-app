@@ -35,7 +35,7 @@ stages:
     - bash $tmpdir/miniconda.sh -b -p $tmpdir/miniconda
     - export PATH=$PATH:$tmpdir/miniconda/bin/
     - echo $PATH
-    - conda create --name album-app
+    - conda create --name album-app python="3.8"
     - source $tmpdir/miniconda/bin/activate
     - conda activate album-app
     - conda install openjdk=11.0.6
