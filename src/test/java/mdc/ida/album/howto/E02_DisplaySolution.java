@@ -34,7 +34,7 @@ public class E02_DisplaySolution extends AbstractHowto {
 	public void collectionUpdated(CollectionIndexEvent event) {
 		// once the collection is updated, display only the first solution of the first catalog
 		SolutionCollection collection = event.getCollection();
-		Solution firstSolution = collection.get(0).get(0);
+		Solution firstSolution = collection.get(0).getSolutions().get(0);
 		album.ui().show(firstSolution.getName(), firstSolution);
 	}
 

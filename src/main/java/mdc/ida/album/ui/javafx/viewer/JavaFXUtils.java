@@ -33,6 +33,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.util.Callback;
 import mdc.ida.album.DefaultValues;
+import mdc.ida.album.UITextValues;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -79,7 +80,7 @@ public class JavaFXUtils {
 		titledPane.setBackground(new Background(new BackgroundFill(new Color(1.0, 1.0, 1.0, 0.5), new CornerRadii(10), Insets.EMPTY)));
 		Label statusIcon = new Label();
 		statusIcon.getStyleClass().add("state-icon");
-		statusIcon.textProperty().bind(Bindings.createStringBinding(() -> stateHappyProperty.get()? "✓" : "❌", stateHappyProperty));
+		statusIcon.textProperty().bind(Bindings.createStringBinding(() -> stateHappyProperty.get()? UITextValues.STATE_HAPPY : UITextValues.STATE_UNHAPPY, stateHappyProperty));
 		HBox res = new HBox(statusIcon, titledPane);
 		stateHappyProperty.addListener((observable, oldValue, newValue) -> {
 			if(newValue) {

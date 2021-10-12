@@ -3,8 +3,8 @@ package mdc.ida.album.howto;
 import mdc.ida.album.AbstractHowto;
 import mdc.ida.album.Album;
 import mdc.ida.album.model.Catalog;
-import mdc.ida.album.model.event.LocalInstallationLoadedEvent;
 import mdc.ida.album.model.Solution;
+import mdc.ida.album.model.event.LocalInstallationLoadedEvent;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -25,7 +25,7 @@ public class E03_RunSolution extends AbstractHowto {
 			album.server().index(e.getInstallation(), event -> {
 				// once the collection is updated, find and run one solution
 				Catalog catalog = event.getCollection().get(0);
-				Optional<Solution> imageJDisplay = catalog.stream().filter(solution -> solution.getName().equals("imagej-display")).findFirst();
+				Optional<Solution> imageJDisplay = catalog.getSolutions().stream().filter(solution -> solution.getName().equals("imagej-display")).findFirst();
 				imageJDisplay.ifPresent(solution -> {
 					try {
 						album.server().launchSolution(e.getInstallation(), solution, "run");

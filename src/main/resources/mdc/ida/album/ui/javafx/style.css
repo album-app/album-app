@@ -80,12 +80,20 @@
     -fx-font-size: 150%;
 }
 
+.state-icon-table {
+    -fx-font-size: 150%;
+}
+
 .state-happy {
     -fx-text-fill: green;
 }
 
 .state-unhappy {
     -fx-text-fill: red;
+}
+
+.state-info {
+    -fx-text-fill: blue;
 }
 
 .my-catalogs, .recently-launched {

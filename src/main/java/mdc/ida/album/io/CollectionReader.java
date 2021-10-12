@@ -29,20 +29,21 @@ public class CollectionReader {
 	}
 
 	private static Catalog readCatalog(AlbumInstallation installation, String name, JsonNode jsonNode) {
-		Catalog catalog = new Catalog(installation);
-		catalog.setName(name);
-		catalog.setId(jsonNode.get("catalog_id").asInt());
-		catalog.setSrc(jsonNode.get("src").asText());
-		catalog.setPath(jsonNode.get("path").asText());
 		JsonNode solutions = jsonNode.get("solutions");
+		ArrayList<Solution> solutionList = new ArrayList<>();
 		if(solutions != null) {
 			for (JsonNode solutionNode : solutions) {
 				Solution solution = readSolution(solutionNode);
 				solution.setCatalogName(name);
 				solution.setInstallation(installation);
-				catalog.add(solution);
+				solutionList.add(solution);
 			}
 		}
+		Catalog catalog = new Catalog(installation, solutionList);
+		catalog.setName(name);
+		catalog.setId(jsonNode.get("catalog_id").asInt());
+		catalog.setSrc(jsonNode.get("src").asText());
+		catalog.setPath(jsonNode.get("path").asText());
 		return catalog;
 	}
 
