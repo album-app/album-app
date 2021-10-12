@@ -8,8 +8,10 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-public class Catalog extends ArrayList<Solution> {
+public class Catalog {
 
 	private final AlbumInstallation parent;
 	private final StringProperty name = new SimpleStringProperty();
@@ -17,8 +19,37 @@ public class Catalog extends ArrayList<Solution> {
 	private final StringProperty src = new SimpleStringProperty();
 	private final IntegerProperty id = new SimpleIntegerProperty();
 	private final BooleanProperty isLocal = new SimpleBooleanProperty();
-	public Catalog(AlbumInstallation parent) {
+	private final ArrayList<Solution> solutions;
+	private final Map<String, SolutionBundle> solutionBundles;
+
+	public Catalog(AlbumInstallation parent, ArrayList<Solution> solutions) {
 		this.parent = parent;
+		this.solutions = solutions;
+		this.solutionBundles = toBundles(solutions);
+	}
+
+	private Map<String, SolutionBundle> toBundles(ArrayList<Solution> solutions) {
+		Map<String, SolutionBundle> res = new HashMap<>();
+		for (Solution solution : solutions) {
+			String key = asBundleKey(solution);
+			if(!res.containsKey(key)) {
+				res.put(key, new SolutionBundle(solution.getGroup(), solution.getName()));
+			}
+			res.get(key).getSolutions().put(solution.getVersion(), solution);
+		}
+		return res;
+	}
+
+	private String asBundleKey(Solution solution) {
+		return solution.getGroup() + ":" + solution.getName();
+	}
+
+	public ArrayList<Solution> getSolutions() {
+		return solutions;
+	}
+
+	public Map<String, SolutionBundle> getSolutionBundles() {
+		return solutionBundles;
 	}
 
 	public boolean isIsLocal() {

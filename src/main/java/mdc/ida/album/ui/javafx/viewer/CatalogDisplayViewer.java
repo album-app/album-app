@@ -68,7 +68,7 @@ public class CatalogDisplayViewer extends EasyJavaFXDisplayViewer<Catalog> {
 		addButtonColumn(tableView, 4, s-> UITextValues.SOLUTION_LIST_HEADER_INSTALL,
 				solution -> eventService.publish(new SolutionLaunchRequestEvent(catalog.getParent(), solution, "install")));
 		addButtonColumn(tableView, 5, s-> UITextValues.SOLUTION_LIST_HEADER_RUN, solution -> eventService.publish(new SolutionLaunchRequestEvent(catalog.getParent(), solution, "run")));
-		catalog.forEach(solution -> tableView.getItems().add(solution));
+		catalog.getSolutions().forEach(solution -> tableView.getItems().add(solution));
 		tableView.setBorder(Border.EMPTY);
 		tableView.setBackground(Background.EMPTY);
 		VBox vBox = new VBox(createFilter(), tableView);

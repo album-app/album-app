@@ -89,6 +89,10 @@ public class UITextValues {
 	public static final String STATUS_ALBUM_RUNNING = "album running.";
 	public static final String STATUS_ALBUM_ENVIRONMENT_MISSING = "album environment is missing";
 	public static final String COLLECTION_CATALOGS_TITLE = "My catalogs";
+	public static final String STATE_HAPPY = "✓";
+	public static final String STATE_UNHAPPY = "❌";
+	public static final String SOLUTION_LIST_NEWER_VERSION_TOOLTIP = "Newer version available!";
+	public static final String SOLUTION_LIST_NEWER_VERSION_LABEL = " ↑↑";
 
 	public static String getActivateEnvironmentCode(String condaIncludePath, String condaEnvironmentPath) {
 		return "PATH=\"" + condaIncludePath + ":$PATH\" conda activate " + condaEnvironmentPath;

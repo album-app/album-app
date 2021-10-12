@@ -241,4 +241,14 @@ public class Solution {
 		this.blocked.set(false);
 		this.blockedMessage.set("");
 	}
+
+	public static int compareVersions(String version1, String version2) {
+		//FIXME use proper version comparison implementation
+		return version1.compareTo(version2);
+	}
+
+	public static int compareVersions(Solution solution1, Solution solution2) {
+		//FIXME use proper version comparison implementation
+		return solution1.getVersion().compareTo(solution2.getVersion());
+	}
 }

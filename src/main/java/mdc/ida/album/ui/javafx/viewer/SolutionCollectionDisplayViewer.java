@@ -1,6 +1,5 @@
 package mdc.ida.album.ui.javafx.viewer;
 
-import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
@@ -11,7 +10,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import mdc.ida.album.model.Solution;
+import mdc.ida.album.model.SolutionBundle;
 import mdc.ida.album.model.SolutionCollection;
 import mdc.ida.album.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
 import org.scijava.Context;
@@ -45,15 +44,15 @@ public class SolutionCollectionDisplayViewer extends EasyJavaFXDisplayViewer<Sol
 
 	@Override
 	protected Node createDisplayPanel(SolutionCollection collection) {
-		TableView<Solution> solutionsView = new SolutionsView(context, collection.getInstallation());
+		TableView<SolutionBundle> solutionsView = new SolutionBundlesView(context, collection.getInstallation());
 //		VBox solutionsBox = new VBox(createFilter(), solutionsView);
 		VBox solutionsBox = new VBox(solutionsView);
 		CatalogListView catalogView = new CatalogListView(context, collection);
 		catalogView.getCatalogView().getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
 			if (newSelection != null) {
 				solutionsView.getItems().clear();
-				newSelection.forEach(solution -> {
-					solutionsView.getItems().add(solution);
+				newSelection.getSolutionBundles().forEach((id, bundle) -> {
+					solutionsView.getItems().add(bundle);
 				});
 			}
 		});

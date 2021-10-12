@@ -30,7 +30,8 @@ public class SolutionsCompactView extends TableView<Solution> {
 	public SolutionsCompactView(Context context, AlbumInstallation installation) {
 		context.inject(this);
 		getStyleClass().add("noheader");
-		TableColumn<Solution, Void> infoCol = addButtonColumn(this, 0, Solution::getName, solution -> uiService.show(solution.getName(), solution), Pos.CENTER_LEFT);
+		TableColumn<Solution, Void> infoCol = addButtonColumn(this, 0,
+				this::solutionIdentifier, solution -> uiService.show(solution.getName(), solution), Pos.CENTER_LEFT);
 		TableColumn<Solution, Void> runCol = addButtonColumn(this, 1, s -> UITextValues.SOLUTION_LIST_RUN_BTN, s -> {
 			try {
 				albumService.launchSolution(
@@ -45,5 +46,9 @@ public class SolutionsCompactView extends TableView<Solution> {
 		setPlaceholder(new Label(UITextValues.RECENT_SOLUTIONS_LIST_PLACEHOLDER));
 		setBorder(Border.EMPTY);
 		setBackground(Background.EMPTY);
+	}
+
+	private String solutionIdentifier(Solution solution) {
+		return solution.getGroup() + ": " + solution.getName() + " (" + solution.getVersion() + ")";
 	}
 }
