@@ -3,14 +3,14 @@ module mdc.ida.album {
 	opens mdc.ida.album.model to javafx.base;
 	opens mdc.ida.album.app to org.scijava;
 	opens mdc.ida.album.commands to org.scijava;
-	opens mdc.ida.album.service to org.scijava;
-	opens mdc.ida.album.service.conda to org.scijava;
+	opens mdc.ida.album.control to org.scijava;
+	opens mdc.ida.album.control.conda to org.scijava;
 	opens mdc.ida.album.ui.javafx;
 	opens mdc.ida.album.ui.javafx.viewer;
 	opens mdc.ida.album.scijava.ui.javafx to org.scijava;
 	opens mdc.ida.album.scijava.ui.javafx.viewer to org.scijava;
 	opens mdc.ida.album.scijava.ui.javafx.widget to org.scijava;
-	opens mdc.ida.album.model.event to javafx.base;
+	opens mdc.ida.album.model.event to javafx.base, org.scijava;
 	requires org.scijava;
 	requires javafx.graphics;
 	requires javafx.controls;

@@ -1,18 +1,18 @@
-package mdc.ida.album.service;
+package mdc.ida.album.control;
 
 import mdc.ida.album.model.AlbumInstallation;
 import mdc.ida.album.model.Catalog;
+import mdc.ida.album.model.LocalAlbumInstallation;
+import mdc.ida.album.model.RemoteAlbumInstallation;
+import mdc.ida.album.model.ServerProperties;
+import mdc.ida.album.model.Solution;
 import mdc.ida.album.model.event.CatalogListEvent;
 import mdc.ida.album.model.event.CollectionIndexEvent;
-import mdc.ida.album.model.LocalAlbumInstallation;
 import mdc.ida.album.model.event.CollectionUpgradeEvent;
 import mdc.ida.album.model.event.CollectionUpgradePreviewEvent;
 import mdc.ida.album.model.event.LocalInstallationLoadedEvent;
 import mdc.ida.album.model.event.RecentlyInstalledUpdatedEvent;
 import mdc.ida.album.model.event.RecentlyLaunchedUpdatedEvent;
-import mdc.ida.album.model.RemoteAlbumInstallation;
-import mdc.ida.album.model.ServerProperties;
-import mdc.ida.album.model.Solution;
 import org.scijava.service.SciJavaService;
 
 import java.io.File;
@@ -62,4 +62,6 @@ public interface AlbumServerService extends SciJavaService {
 
 	void upgrade(AlbumInstallation installation, Consumer<CollectionUpgradeEvent> callback) throws IOException;
 	void upgradeDryRun(AlbumInstallation installation, Consumer<CollectionUpgradePreviewEvent> callback) throws IOException;
+
+	String getCoverPath(Solution solution, LocalAlbumInstallation installation);
 }

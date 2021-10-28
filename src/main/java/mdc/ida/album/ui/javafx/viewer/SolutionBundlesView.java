@@ -154,26 +154,14 @@ public class SolutionBundlesView extends TableView<SolutionBundle> {
 
 	@EventHandler
 	private void solutionTaskStarted(SolutionLaunchRequestEvent e) {
-		if(e.getAction().equals("install")) {
-			e.getSolution().block("installing...");
-			refresh();
-		}
-		if(e.getAction().equals("uninstall")) {
-			e.getSolution().block("uninstalling...");
+		if(e.getAction().equals("install") || e.getAction().equals("uninstall")) {
 			refresh();
 		}
 	}
 
 	@EventHandler
 	private void solutionTaskFinished(SolutionLaunchFinishedEvent e) {
-		if(e.getAction().equals("install")) {
-			e.getSolution().setInstalled(true);
-			e.getSolution().unblock();
-			refresh();
-		}
-		if(e.getAction().equals("uninstall")) {
-			e.getSolution().setInstalled(false);
-			e.getSolution().unblock();
+		if(e.getAction().equals("install") || e.getAction().equals("uninstall")) {
 			refresh();
 		}
 	}

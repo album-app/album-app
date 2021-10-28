@@ -3,6 +3,7 @@ package mdc.ida.album.ui.javafx;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.HBox;
@@ -69,9 +70,9 @@ public class AlbumApplicationFrame implements ApplicationFrame {
 	}
 
 	private Node createHeader() {
-		Text header1 = new Text("album ");
+		Label header1 = new Label("album ");
 		header1.getStyleClass().add("header-short");
-		Text header2 = new Text("sharing solutions across tools and domains");
+		Label header2 = new Label("sharing solutions across tools and domains");
 		header2.getStyleClass().add("header-long");
 		final Pane spacer = new Pane();
 		HBox.setHgrow(spacer, Priority.ALWAYS);

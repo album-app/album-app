@@ -10,7 +10,7 @@ import mdc.ida.album.DefaultValues;
 import mdc.ida.album.UITextValues;
 import mdc.ida.album.model.AlbumInstallation;
 import mdc.ida.album.model.Solution;
-import mdc.ida.album.service.AlbumServerService;
+import mdc.ida.album.control.AlbumServerService;
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.UIService;

@@ -129,3 +129,11 @@
 .icon-warning {
     -fx-color: red;
 }
+
+.solution-header {
+   -fx-padding: 20px 20px 10px 20px;
+}
+
+.solution-header-id {
+    -fx-font-family: 'monospaced';
+}

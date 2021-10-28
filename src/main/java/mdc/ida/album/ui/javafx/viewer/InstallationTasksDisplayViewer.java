@@ -2,18 +2,17 @@ package mdc.ida.album.ui.javafx.viewer;
 
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Control;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 import mdc.ida.album.DefaultValues;
 import mdc.ida.album.model.InstallationTasks;
+import mdc.ida.album.model.LogAddedEvent;
 import mdc.ida.album.model.LogEntry;
 import mdc.ida.album.model.Task;
-import mdc.ida.album.model.LogAddedEvent;
 import mdc.ida.album.scijava.ui.javafx.viewer.EasyJavaFXDisplayViewer;
 import org.scijava.Context;
 import org.scijava.event.EventHandler;
@@ -56,6 +55,15 @@ public class InstallationTasksDisplayViewer extends EasyJavaFXDisplayViewer<Inst
 		TableColumn<LogEntry, String> levelCol = makeColumn("Level", "levelName");
 		logView.getColumns().add(levelCol);
 		TableColumn<LogEntry, String> msgCol = makeColumn("Message", "msg");
+		msgCol.setCellFactory(tc -> {
+			TableCell<LogEntry, String> cell = new TableCell<>();
+			Text text = new Text();
+			cell.setGraphic(text);
+			cell.setPrefHeight(Control.USE_COMPUTED_SIZE);
+			text.wrappingWidthProperty().bind(msgCol.widthProperty());
+			text.textProperty().bind(cell.itemProperty());
+			return cell ;
+		});
 		logView.getColumns().add(msgCol);
 		double width = levelCol.widthProperty().get() + 20;
 		msgCol.prefWidthProperty().bind(logView.widthProperty().subtract(width));

@@ -13,6 +13,44 @@ import javafx.collections.ObservableList;
 import java.util.List;
 
 public class Solution {
+	public static class Citation {
+		final String text;
+		final String doi;
+		public Citation(String text, String doi) {
+			this.text = text;
+			this.doi = doi;
+		}
+
+		public String getDOI() {
+			return doi;
+		}
+
+		public String getText() {
+			return text;
+		}
+	}
+
+	public static class Cover {
+		final String src;
+		final String description;
+		public Cover(String src, String description) {
+			this.src = src;
+			this.description = description;
+		}
+
+		public String getSrc() {
+			return src;
+		}
+
+		public String getDescription() {
+			return description;
+		}
+	}
+
+	public Solution(AlbumInstallation installation) {
+		this.installation = installation;
+	}
+
 	private final StringProperty catalogName = new SimpleStringProperty();
 	private final IntegerProperty catalogId = new SimpleIntegerProperty();
 	private final StringProperty name = new SimpleStringProperty();
@@ -23,14 +61,15 @@ public class Solution {
 	private final StringProperty documentation = new SimpleStringProperty();
 	private final StringProperty repo = new SimpleStringProperty();
 	private final StringProperty license = new SimpleStringProperty();
-	private final StringProperty author = new SimpleStringProperty();
-	private final StringProperty cite = new SimpleStringProperty();
+	private final ListProperty<String> authors = new SimpleListProperty<>();
+	private final ListProperty<Citation> cite = new SimpleListProperty<>();
 	private final BooleanProperty installed = new SimpleBooleanProperty();
 	private final BooleanProperty blocked = new SimpleBooleanProperty();
 	private final StringProperty blockedMessage = new SimpleStringProperty();
 	private final ListProperty<String> tags = new SimpleListProperty<>();
+	private final ListProperty<Cover> covers = new SimpleListProperty<>();
 	private List<SolutionArgument> args;
-	private AlbumInstallation installation;
+	private final AlbumInstallation installation;
 
 	public String getTitle() {
 		return title.get();
@@ -100,6 +139,18 @@ public class Solution {
 		this.version.set(version);
 	}
 
+	public ObservableList<Cover> getCovers() {
+		return covers.get();
+	}
+
+	public ListProperty<Cover> coversProperty() {
+		return covers;
+	}
+
+	public void setCovers(ObservableList<Cover> covers) {
+		this.covers.set(covers);
+	}
+
 	public String getCatalogName() {
 		return catalogName.get();
 	}
@@ -148,18 +199,6 @@ public class Solution {
 		this.license.set(license);
 	}
 
-	public String getAuthors() {
-		return author.get();
-	}
-
-	public StringProperty authorProperty() {
-		return author;
-	}
-
-	public void setAuthor(String author) {
-		this.author.set(author);
-	}
-
 	public ObservableList<String> getTags() {
 		return tags.get();
 	}
@@ -168,28 +207,36 @@ public class Solution {
 		return tags;
 	}
 
-	public String getCite() {
-		return cite.get();
-	}
-
-	public StringProperty citeProperty() {
-		return cite;
-	}
-
-	public void setCite(String cite) {
-		this.cite.set(cite);
-	}
-
 	public void setTags(ObservableList<String> tags) {
 		this.tags.set(tags);
 	}
 
-	public AlbumInstallation getInstallation() {
-		return installation;
+	public ObservableList<String> getAuthors() {
+		return authors.get();
 	}
 
-	public void setInstallation(AlbumInstallation installation) {
-		this.installation = installation;
+	public ListProperty<String> authorsProperty() {
+		return authors;
+	}
+
+	public void setAuthors(ObservableList<String> authors) {
+		this.authors.set(authors);
+	}
+
+	public ObservableList<Citation> getCite() {
+		return cite.get();
+	}
+
+	public ListProperty<Citation> citeProperty() {
+		return cite;
+	}
+
+	public void setCite(ObservableList<Citation> cite) {
+		this.cite.set(cite);
+	}
+
+	public AlbumInstallation getInstallation() {
+		return installation;
 	}
 
 	public int getCatalogId() {

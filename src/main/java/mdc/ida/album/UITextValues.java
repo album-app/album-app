@@ -59,6 +59,7 @@ public class UITextValues {
 	public static final String SOLUTION_LIST_UNINSTALL_BTN = "Uninstall";
 	public static final String SOLUTION_LIST_RUN_BTN = "Run";
 	public static final String SOLUTION_VIEW_CATALOG_LABEL = "Catalog: ";
+	public static final String SOLUTION_VIEW_ACTION_LABEL = "Actions: ";
 	public static final String SOLUTION_VIEW_CITE_LABEL = "Citation";
 	public static final String SOLUTION_VIEW_DESCRIPTION_LABEL = "";
 	public static final String SOLUTION_VIEW_AUTHORS_LABEL = "Authors of solution";

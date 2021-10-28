@@ -8,7 +8,6 @@ import mdc.ida.album.model.Catalog;
 import mdc.ida.album.model.CatalogUpdate;
 import mdc.ida.album.model.CollectionUpdates;
 import mdc.ida.album.model.Coordinates;
-import mdc.ida.album.model.LocalAlbumInstallation;
 import mdc.ida.album.model.Solution;
 import mdc.ida.album.model.SolutionArgument;
 import mdc.ida.album.model.SolutionCollection;
@@ -33,9 +32,8 @@ public class CollectionReader {
 		ArrayList<Solution> solutionList = new ArrayList<>();
 		if(solutions != null) {
 			for (JsonNode solutionNode : solutions) {
-				Solution solution = readSolution(solutionNode);
+				Solution solution = readSolution(solutionNode, installation);
 				solution.setCatalogName(name);
-				solution.setInstallation(installation);
 				solutionList.add(solution);
 			}
 		}
@@ -47,8 +45,8 @@ public class CollectionReader {
 		return catalog;
 	}
 
-	private static Solution readSolution(JsonNode node) {
-		Solution solution = new Solution();
+	private static Solution readSolution(JsonNode node, AlbumInstallation installation) {
+		Solution solution = new Solution(installation);
 		setIntAttr(node, solution::setCatalogId, "catalog_id");
 		setStringAttr(node, solution::setDescription, "description");
 		setStringAttr(node, solution::setName, "solution_name", "name");
@@ -56,10 +54,30 @@ public class CollectionReader {
 		setStringAttr(node, solution::setVersion, "solution_version", "version");
 		setStringAttr(node, solution::setDocumentation, "documentation");
 		setListStringAttr(node, solution::setTags, "tags");
-		setStringAttr(node, solution::setCite, "cite");
+		JsonNode jsonNode = node.get("cite");
+		ObservableList<Solution.Citation> citations = FXCollections.observableArrayList(new ArrayList<>());
+		if(jsonNode != null) {
+			for (JsonNode citationNode : jsonNode) {
+				String text = citationNode.get("text").asText();
+				String doi = null;
+				if(citationNode.has("doi")) doi = citationNode.get("doi").asText();
+				citations.add(new Solution.Citation(text, doi));
+			}
+		}
+		solution.setCite(citations);
+		jsonNode = node.get("covers");
+		ObservableList<Solution.Cover> covers = FXCollections.observableArrayList(new ArrayList<>());
+		if(jsonNode != null) {
+			for (JsonNode coverNode : jsonNode) {
+				String source = coverNode.get("source").asText();
+				String description = coverNode.get("description").asText();
+				covers.add(new Solution.Cover(source, description));
+			}
+		}
+		solution.setCovers(covers);
 		setStringAttr(node, solution::setRepo, "git_repo");
 		setStringAttr(node, solution::setLicense, "license");
-		setStringAttr(node, solution::setAuthor, "authors");
+		setListStringAttr(node, solution::setAuthors, "authors");
 		setStringAttr(node, solution::setTitle, "title");
 		setBooleanAttr(node, solution::setInstalled, "installed");
 		List<SolutionArgument> albumArgs = new ArrayList<>();
@@ -119,10 +137,10 @@ public class CollectionReader {
 		}
 	}
 
-	public static List<Solution> readSolutionsList(JsonNode node) {
+	public static List<Solution> readSolutionsList(JsonNode node, AlbumInstallation installation) {
 		List<Solution> res = new ArrayList<>();
 		for (JsonNode solutionNode : node.get("solutions")) {
-			Solution solution = readSolution(solutionNode);
+			Solution solution = readSolution(solutionNode, installation);
 			res.add(solution);
 		}
 		return res;

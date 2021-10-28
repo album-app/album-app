@@ -1,4 +1,4 @@
-package mdc.ida.album.service.conda;
+package mdc.ida.album.model.event;
 
 import org.scijava.event.SciJavaEvent;
 

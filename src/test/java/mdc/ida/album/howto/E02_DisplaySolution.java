@@ -2,6 +2,7 @@ package mdc.ida.album.howto;
 
 import mdc.ida.album.AbstractHowto;
 import mdc.ida.album.Album;
+import mdc.ida.album.model.Catalog;
 import mdc.ida.album.model.event.CollectionIndexEvent;
 import mdc.ida.album.model.event.LocalInstallationLoadedEvent;
 import mdc.ida.album.model.Solution;
@@ -34,8 +35,11 @@ public class E02_DisplaySolution extends AbstractHowto {
 	public void collectionUpdated(CollectionIndexEvent event) {
 		// once the collection is updated, display only the first solution of the first catalog
 		SolutionCollection collection = event.getCollection();
-		Solution firstSolution = collection.get(0).getSolutions().get(0);
-		album.ui().show(firstSolution.getName(), firstSolution);
+		Catalog catalog = collection.get(1);
+		if(catalog.getSolutions().size() > 0) {
+			Solution firstSolution = catalog.getSolutions().get(1);
+			album.ui().show(firstSolution.getName(), firstSolution);
+		}
 	}
 
 	public static void main(String... args) {

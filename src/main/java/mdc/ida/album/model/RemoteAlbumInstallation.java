@@ -5,6 +5,7 @@ public class RemoteAlbumInstallation implements AlbumInstallation {
 	private final String host;
 	private final int port;
 	private final InstallationTasks tasks;
+	private ServerProperties properties;
 
 	public RemoteAlbumInstallation(String host, int port) {
 		this.host = host;
@@ -15,11 +16,6 @@ public class RemoteAlbumInstallation implements AlbumInstallation {
 	@Override
 	public boolean canBeLaunched() {
 		return false;
-	}
-
-	@Override
-	public void launch() {
-		throw new RuntimeException("Cannot launch remote album server.");
 	}
 
 	@Override
@@ -35,5 +31,15 @@ public class RemoteAlbumInstallation implements AlbumInstallation {
 	@Override
 	public InstallationTasks getTasks() {
 		return tasks;
+	}
+
+	@Override
+	public void setProperties(ServerProperties properties) {
+		this.properties = properties;
+	}
+
+	@Override
+	public ServerProperties getProperties() {
+		return properties;
 	}
 }

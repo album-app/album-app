@@ -18,6 +18,7 @@ public class DefaultValues {
 	public static final int UI_SPACING = 15;
 	public static final Font FONT_CONSOLE = Font.font("monospace", 14);
 	public static final Font FONT_TITLE = Font.font(Font.getDefault().getFamily(), 20);
+	public static final Font FONT_SECOND_TITLE = Font.font(Font.getDefault().getFamily(), 16);
 	public static final long TASK_UPDATE_INTERVAL = 1000L;
 	public static int UI_BUTTON_MIN_WIDTH = 200;
 

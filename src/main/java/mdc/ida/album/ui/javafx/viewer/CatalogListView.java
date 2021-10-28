@@ -1,6 +1,5 @@
 package mdc.ida.album.ui.javafx.viewer;
 
-import javafx.beans.binding.Bindings;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -14,7 +13,7 @@ import mdc.ida.album.model.AlbumInstallation;
 import mdc.ida.album.model.Catalog;
 import mdc.ida.album.model.event.CatalogListEvent;
 import mdc.ida.album.model.SolutionCollection;
-import mdc.ida.album.service.AlbumServerService;
+import mdc.ida.album.control.AlbumServerService;
 import org.scijava.Context;
 import org.scijava.event.EventHandler;
 import org.scijava.plugin.Parameter;

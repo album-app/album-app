@@ -23,6 +23,10 @@ public class AlbumClient {
     }
 
     public JsonNode send(String msg) throws IOException {
+        return send(msg, false);
+    }
+
+    public JsonNode send(String msg, boolean closeIfBadResponse) throws IOException {
         System.out.println("AlbumClient: sending " + msg);
         JsonNode jsonNode;
         InputStream serverMsg = null;
@@ -35,11 +39,12 @@ public class AlbumClient {
             int statusCode = response.getStatusLine().getStatusCode();
             serverMsg = response.getEntity().getContent();
             if (statusCode != 200) {
-                serverMsg.close();
-                httpClient.close();
-                //TODO user logger
                 System.out.println("Failed : HTTP error code : "
                         + statusCode);
+                serverMsg.close();
+                if(closeIfBadResponse) {
+                    httpClient.close();
+                }
                 return null;
             }
 

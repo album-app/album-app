@@ -1,5 +1,6 @@
 package mdc.ida.album.scijava.ui.javafx.widget;
 
+import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -22,7 +23,7 @@ public class JavaFXInputPanel extends AbstractInputPanel<VBox, HBox> {
 		// add widget to panel
 		if (widget.isLabeled()) {
 			// widget is prefixed by a label
-			final Text l = new Text(model.getWidgetLabel());
+			final Label l = new Label(model.getWidgetLabel());
 			final String desc = model.getItem().getDescription();
 //			if (desc != null && !desc.isEmpty()) l.setToolTipText(desc);
 			getComponent().getChildren().add(l);

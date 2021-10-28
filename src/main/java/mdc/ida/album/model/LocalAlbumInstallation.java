@@ -13,6 +13,7 @@ public class LocalAlbumInstallation implements AlbumInstallation {
 	private boolean condaMissing; // conda
 	private boolean hasAlbumEnvironment;
 	private final InstallationTasks tasks;
+	private ServerProperties properties;
 
 	public LocalAlbumInstallation(int port) {
 		this.port = port;
@@ -30,11 +31,6 @@ public class LocalAlbumInstallation implements AlbumInstallation {
 	}
 
 	@Override
-	public void launch() {
-
-	}
-
-	@Override
 	public String getHost() {
 		return "http://127.0.0.1";
 	}
@@ -47,6 +43,16 @@ public class LocalAlbumInstallation implements AlbumInstallation {
 	@Override
 	public InstallationTasks getTasks() {
 		return tasks;
+	}
+
+	@Override
+	public void setProperties(ServerProperties properties) {
+		this.properties = properties;
+	}
+
+	@Override
+	public ServerProperties getProperties() {
+		return properties;
 	}
 
 	public File getCondaPath() {

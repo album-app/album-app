@@ -1,6 +1,10 @@
-package mdc.ida.album.service.conda;
+package mdc.ida.album.control.conda;
 
-import mdc.ida.album.service.DefaultAlbumServerService;
+import mdc.ida.album.control.DefaultAlbumServerService;
+import mdc.ida.album.model.event.CondaEnvironmentDetectedEvent;
+import mdc.ida.album.model.event.CondaExecutableMissingEvent;
+import mdc.ida.album.model.event.CondaPathMissingEvent;
+import mdc.ida.album.model.event.HasCondaInstalledEvent;
 import mdc.ida.album.utils.StreamGobbler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;

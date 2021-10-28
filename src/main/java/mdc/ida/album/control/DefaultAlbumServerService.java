@@ -1,11 +1,10 @@
-package mdc.ida.album.service;
+package mdc.ida.album.control;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import mdc.ida.album.DefaultValues;
 import mdc.ida.album.UITextValues;
-import mdc.ida.album.control.AlbumClient;
 import mdc.ida.album.io.CollectionReader;
 import mdc.ida.album.model.AlbumInstallation;
 import mdc.ida.album.model.Catalog;
@@ -25,11 +24,12 @@ import mdc.ida.album.model.ServerProperties;
 import mdc.ida.album.model.Solution;
 import mdc.ida.album.model.SolutionArgument;
 import mdc.ida.album.model.SolutionCollection;
+import mdc.ida.album.model.event.SolutionLaunchFailedEvent;
 import mdc.ida.album.model.event.SolutionLaunchFinishedEvent;
 import mdc.ida.album.model.event.SolutionLaunchRequestEvent;
 import mdc.ida.album.model.Task;
-import mdc.ida.album.service.conda.CondaExecutableMissingEvent;
-import mdc.ida.album.service.conda.CondaService;
+import mdc.ida.album.model.event.CondaExecutableMissingEvent;
+import mdc.ida.album.control.conda.CondaService;
 import mdc.ida.album.utils.StreamGobbler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -40,7 +40,6 @@ import org.scijava.command.Inputs;
 import org.scijava.display.DisplayService;
 import org.scijava.event.EventHandler;
 import org.scijava.event.EventService;
-import org.scijava.event.SciJavaEvent;
 import org.scijava.log.LogService;
 import org.scijava.module.DefaultMutableModuleItem;
 import org.scijava.module.ModuleItem;
@@ -165,7 +164,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "";
 		try {
-			JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
+			JsonNode response = client.send(client.createAlbumRequest(mapper, actionName), true);
 			boolean running = response != null;
 			installation.setServerRunning(running);
 			if(running) {
@@ -281,6 +280,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 			Map.Entry<String, JsonNode> prop = props.next();
 			properties.put(prop.getKey(), prop.getValue().asText());
 		}
+		installation.setProperties(properties);
 		return properties;
 	}
 
@@ -362,7 +362,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
 		if(response == null) return;
 		statusService.showStatus("Updated recently launched solutions list.");
-		List<Solution> solutions = CollectionReader.readSolutionsList(response);
+		List<Solution> solutions = CollectionReader.readSolutionsList(response, installation);
 		resolveCatalogs(solutions);
 		RecentlyLaunchedUpdatedEvent event = new RecentlyLaunchedUpdatedEvent(solutions);
 		if(callback != null) callback.accept(event);
@@ -395,7 +395,7 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		JsonNode response = client.send(client.createAlbumRequest(mapper, actionName));
 		if(response == null) return;
 		statusService.showStatus("Updated recently installed solutions list.");
-		List<Solution> solutions = CollectionReader.readSolutionsList(response);
+		List<Solution> solutions = CollectionReader.readSolutionsList(response, installation);
 		resolveCatalogs(solutions);
 		RecentlyInstalledUpdatedEvent event = new RecentlyInstalledUpdatedEvent(solutions);
 		if(callback != null) callback.accept(event);
@@ -429,6 +429,22 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 	}
 
 	@Override
+	public String getCoverPath(Solution solution, LocalAlbumInstallation installation) {
+		if(solution.getCovers().size() == 0) return null;
+		if(installation.getProperties() == null) {
+			try {
+				getServerProperties(installation);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		String coverPath = solution.getCovers().get(0).getSrc();
+		return new File(installation.getProperties().get("cache_base") + File.separator + "catalogs" + File.separator
+				+ solution.getCatalogName() + File.separator + "solutions" + File.separator + solution.getGroup()
+				+ File.separator + solution.getName().replace("-", "_").toLowerCase() + File.separator + solution.getVersion().replace(".", "_").replace("-", "_").toLowerCase(), coverPath).getAbsolutePath();
+	}
+
+	@Override
 	public void upgrade(AlbumInstallation installation, Consumer<CollectionUpgradeEvent> callback) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String actionName = "upgrade";
@@ -443,6 +459,12 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 	}
 
 	private void launch(AlbumInstallation installation, Solution solution, String actionName) throws IOException {
+		if(actionName.equals("install")) {
+			solution.block("installing...");
+		}
+		if(actionName.equals("uninstall")) {
+			solution.block("uninstalling...");
+		}
 		ObjectMapper mapper = new ObjectMapper();
 		String path = actionName + "/" + solution.getCatalogName() + "/" + solution.getGroup() + "/" + solution.getName() + "/" + solution.getVersion();
 		ObjectNode solutionArgs = mapper.createObjectNode();
@@ -481,8 +503,20 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				if(task.status == Task.Status.FAILED) {
+					timer.cancel();
+					eventService.publish(new SolutionLaunchFailedEvent(installation, solution, actionName));
+				}
 				if(task.status == Task.Status.FINISHED) {
 					timer.cancel();
+					if(actionName.equals("install")) {
+						solution.setInstalled(true);
+						solution.unblock();
+					}
+					if(actionName.equals("uninstall")) {
+						solution.setInstalled(false);
+						solution.unblock();
+					}
 					eventService.publish(new SolutionLaunchFinishedEvent(installation, solution, actionName));
 				}
 			}
@@ -494,28 +528,35 @@ public class DefaultAlbumServerService extends AbstractService implements AlbumS
 		AlbumClient client = getClient(installation);
 		JsonNode resRequest = client.send(client.createAlbumRequest(new ObjectMapper(), "status/" + task.getId()));
 		System.out.println(resRequest);
-		String status = resRequest.get("status").asText();
-		JsonNode records = resRequest.get("records");
 		List<LogEntry> res = new ArrayList<>();
-		if(status.equals("WAITING")) task.setStatus(Task.Status.WAITING);
-		if(status.equals("RUNNING")) task.setStatus(Task.Status.RUNNING);
-		if(status.equals("FINISHED")) task.setStatus(Task.Status.FINISHED);
-		for (JsonNode record : records) {
-			String ascTime = record.get("asctime").asText();
-			String name = record.get("name").asText();
-			String levelName = record.get("levelname").asText();
-			String msg = record.get("msg").asText();
-			boolean logFound = false;
-			for (LogEntry taskLog : task.getLogs()) {
-				if (taskLog.getAscTime().equals(ascTime) && taskLog.getMsg().equals(msg)) {
-					logFound = true;
-					break;
+		if(resRequest != null) {
+			if(resRequest.has("status")) {
+				String status = resRequest.get("status").asText();
+				if(status.equals("WAITING")) task.setStatus(Task.Status.WAITING);
+				if(status.equals("RUNNING")) task.setStatus(Task.Status.RUNNING);
+				if(status.equals("FINISHED")) task.setStatus(Task.Status.FINISHED);
+				if(status.equals("FAILED")) task.setStatus(Task.Status.FAILED);
+			}
+			if(resRequest.has("records")) {
+				JsonNode records = resRequest.get("records");
+				for (JsonNode record : records) {
+					String ascTime = record.get("asctime").asText();
+					String name = record.get("name").asText();
+					String levelName = record.get("levelname").asText();
+					String msg = record.get("msg").asText();
+					boolean logFound = false;
+					for (LogEntry taskLog : task.getLogs()) {
+						if (taskLog.getAscTime().equals(ascTime) && taskLog.getMsg().equals(msg)) {
+							logFound = true;
+							break;
+						}
+					}
+					if(logFound) continue;
+					LogEntry logEntry = new LogEntry(msg, ascTime, name, levelName);
+					task.getLogs().add(logEntry);
+					res.add(logEntry);
 				}
 			}
-			if(logFound) continue;
-			LogEntry logEntry = new LogEntry(msg, ascTime, name, levelName);
-			task.getLogs().add(logEntry);
-			res.add(logEntry);
 		}
 		return res;
 	}

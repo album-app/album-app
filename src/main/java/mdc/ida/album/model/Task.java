@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Task {
 	public enum Status {
-		WAITING, RUNNING, FINISHED;
+		WAITING, RUNNING, FINISHED, FAILED;
 
 	}
 	private final int id;
